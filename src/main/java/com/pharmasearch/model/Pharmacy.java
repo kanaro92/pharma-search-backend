@@ -1,12 +1,15 @@
 package com.pharmasearch.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+
 import java.util.List;
 
 @Data
+@Builder
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @Table(name = "pharmacies")
 public class Pharmacy {

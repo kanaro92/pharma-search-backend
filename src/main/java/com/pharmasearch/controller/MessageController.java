@@ -10,6 +10,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/messages")
 @RequiredArgsConstructor
+@CrossOrigin("*")
 public class MessageController {
     private final MessageService messageService;
 
