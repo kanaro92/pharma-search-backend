@@ -32,6 +32,9 @@ public class Pharmacy {
     @Column
     private String phoneNumber;
 
+    @Transient  // This field won't be persisted in the database
+    private Double distance;  // Distance in kilometers
+
     /*
     @OneToMany(mappedBy = "pharmacy")
     private List<Pharmacist> pharmacists;
