@@ -17,8 +17,11 @@ public class MedicationRequest {
     private Patient patient;
 
     @ManyToOne
-    @JoinColumn(name = "medication_id", nullable = false)
-    private Medication medication;
+    @JoinColumn(name = "pharmacy_id", nullable = false)
+    private Pharmacy pharmacy;
+
+    @Column(nullable = false)
+    private String medicationName;
 
     @Column(nullable = false)
     private LocalDateTime requestTime;
@@ -32,12 +35,4 @@ public class MedicationRequest {
 
     @Column
     private String note;
-}
-
-enum RequestStatus {
-    PENDING,
-    ACCEPTED,
-    DECLINED,
-    COMPLETED,
-    CANCELLED
 }

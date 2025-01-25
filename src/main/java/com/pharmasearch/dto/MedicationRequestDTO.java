@@ -6,6 +6,9 @@ import jakarta.validation.constraints.Min;
 
 @Data
 public class MedicationRequestDTO {
+    @NotNull(message = "Medication name is required")
+    private String medicationName;
+
     @NotNull(message = "Medication ID is required")
     private Long medicationId;
 

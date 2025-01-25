@@ -61,4 +61,8 @@ public class MessageService {
         message.setRead(true);
         messageRepository.save(message);
     }
+
+    public List<Message> getMessagesByRequest(Long requestId) {
+        return messageRepository.findByMedicationRequestIdOrderByTimestampDesc(requestId);
+    }
 }
