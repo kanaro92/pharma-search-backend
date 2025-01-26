@@ -1,5 +1,7 @@
 package com.pharmasearch.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,12 +9,14 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "medication_requests")
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class MedicationRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,25 +25,27 @@ public class MedicationRequest {
     @Column(nullable = false)
     private String medicationName;
 
-    @Column(nullable = false)
     private Integer quantity;
 
     @Column(columnDefinition = "TEXT")
     private String note;
 
     @Column(nullable = false)
-    private String status;
+    private String status = "PENDING";
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"medicationRequests", "password", "authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired"})
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "pharmacy_id")
+    @JsonBackReference
     private Pharmacy pharmacy;
 
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Message> messages;
+    @JsonIgnoreProperties("request")
+    private List<Message> messages = new ArrayList<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

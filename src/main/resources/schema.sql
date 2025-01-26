@@ -40,7 +40,7 @@ CREATE TABLE medication_inquiries (
 CREATE TABLE medication_requests (
     id BIGSERIAL PRIMARY KEY,
     medication_name VARCHAR(255) NOT NULL,
-    quantity INTEGER NOT NULL,
+    quantity INTEGER,
     note TEXT,
     status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP NOT NULL,

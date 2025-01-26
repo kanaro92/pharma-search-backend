@@ -1,6 +1,7 @@
 package com.pharmasearch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,11 +23,13 @@ public class Pharmacy extends User {
     @OneToMany(mappedBy = "pharmacy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
+    @JsonManagedReference
     private Set<MedicationRequest> medicationRequests = new HashSet<>();
 
     @OneToMany(mappedBy = "pharmacy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
+    @JsonManagedReference
     private Set<MedicationStock> medicationStocks = new HashSet<>();
 
     @Column(nullable = false)

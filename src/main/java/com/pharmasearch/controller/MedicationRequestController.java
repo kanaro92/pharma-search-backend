@@ -8,6 +8,7 @@ import com.pharmasearch.service.MessageService;
 import com.pharmasearch.service.MedicationRequestService;
 import com.pharmasearch.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +28,7 @@ public class MedicationRequestController {
     public ResponseEntity<MedicationRequest> createRequest(@RequestBody MedicationRequestDTO requestDTO) {
         User currentUser = userService.getCurrentUser();
         MedicationRequest savedRequest = medicationRequestService.createRequest(requestDTO, currentUser);
-        return ResponseEntity.ok(savedRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedRequest);
     }
 
     @PostMapping("/{requestId}/messages")
