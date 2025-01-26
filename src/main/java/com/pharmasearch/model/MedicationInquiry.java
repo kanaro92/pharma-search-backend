@@ -1,5 +1,6 @@
 package com.pharmasearch.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "medication_inquiries")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class MedicationInquiry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,11 +35,13 @@ public class MedicationInquiry {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password"})
     private User user;
 
     @OneToMany(mappedBy = "inquiry", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"inquiry"})
     private List<InquiryMessage> messages = new ArrayList<>();
 
     @PrePersist

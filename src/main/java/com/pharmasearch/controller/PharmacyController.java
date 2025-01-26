@@ -2,6 +2,7 @@ package com.pharmasearch.controller;
 
 import com.pharmasearch.dto.PharmacyRegistrationDTO;
 import com.pharmasearch.model.Pharmacy;
+import com.pharmasearch.model.PharmacyWithDistance;
 import com.pharmasearch.service.PharmacyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -44,10 +45,10 @@ public class PharmacyController {
     }
 
     @GetMapping("/nearby")
-    public ResponseEntity<List<Pharmacy>> getNearbyPharmacies(
+    public ResponseEntity<List<PharmacyWithDistance>> getNearbyPharmacies(
             @RequestParam Double latitude,
             @RequestParam Double longitude,
             @RequestParam(defaultValue = "5.0") Double radius) {
-        return ResponseEntity.ok(pharmacyService.findNearbyPharmacies(latitude, longitude, radius));
+        return ResponseEntity.ok(pharmacyService.findNearbyPharmacies(latitude, longitude));
     }
 }

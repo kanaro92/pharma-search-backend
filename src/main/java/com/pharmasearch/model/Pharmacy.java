@@ -1,24 +1,33 @@
 package com.pharmasearch.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import java.util.List;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@EqualsAndHashCode(callSuper = true)
 @Table(name = "pharmacies")
+@DiscriminatorValue("Pharmacy")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
 public class Pharmacy extends User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @OneToMany(mappedBy = "pharmacy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    private Set<MedicationRequest> medicationRequests = new HashSet<>();
 
-    @OneToMany(mappedBy = "pharmacy")
-    private List<MedicationRequest> medicationRequests;
-
-    @Column(nullable = false)
-    private String name;
+    @OneToMany(mappedBy = "pharmacy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    private Set<MedicationStock> medicationStocks = new HashSet<>();
 
     @Column(nullable = false)
     private String address;
@@ -29,15 +38,19 @@ public class Pharmacy extends User {
     @Column(nullable = false)
     private Double longitude;
 
-    @Column
+    @Column(name = "opening_hours")
     private String openingHours;
 
-    @Column
+    @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Transient  // This field won't be persisted in the database
-    private Double distance;  // Distance in kilometers
+    @Transient
+    private Double distance;
 
-    @OneToMany(mappedBy = "pharmacy")
-    private List<MedicationStock> medicationStocks;
+    public static class PharmacyBuilder extends UserBuilder {
+        PharmacyBuilder() {
+            super();
+            enabled(true);
+        }
+    }
 }
