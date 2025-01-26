@@ -11,7 +11,7 @@ import java.util.List;
 @Table(name = "patients")
 public class Patient extends User {
     
-    @OneToMany(mappedBy = "patient")
+    @OneToMany(mappedBy = "user")
     private List<MedicationRequest> medicationRequests;
 
     @Column

@@ -5,8 +5,11 @@ import com.pharmasearch.model.PharmacyWithDistance;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
+@Repository
 public interface PharmacyRepository extends JpaRepository<Pharmacy, Long> {
     @Query(value = """
             SELECT p.id as id, 
@@ -24,4 +27,8 @@ public interface PharmacyRepository extends JpaRepository<Pharmacy, Long> {
     List<PharmacyWithDistance> findNearbyPharmacies(
             @Param("latitude") double latitude,
             @Param("longitude") double longitude);
+
+    List<Pharmacy> findByLatitudeBetweenAndLongitudeBetween(
+            Double latMin, Double latMax,
+            Double lonMin, Double lonMax);
 }

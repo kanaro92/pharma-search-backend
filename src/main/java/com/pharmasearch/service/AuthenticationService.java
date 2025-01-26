@@ -1,7 +1,8 @@
 package com.pharmasearch.service;
 
-import com.pharmasearch.dto.AuthRequest;
-import com.pharmasearch.dto.AuthResponse;
+import com.pharmasearch.constants.UserRoles;
+import com.pharmasearch.dto.AuthenticationRequest;
+import com.pharmasearch.dto.AuthenticationResponse;
 import com.pharmasearch.dto.RegisterRequest;
 import com.pharmasearch.model.User;
 import com.pharmasearch.repository.UserRepository;
@@ -9,52 +10,51 @@ import com.pharmasearch.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+    public AuthenticationResponse register(RegisterRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        User user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phoneNumber(request.getPhoneNumber())
-                .role(request.getRole())
-                .build();
+        var user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(UserRoles.USER);
 
         userRepository.save(user);
-        String token = jwtService.generateToken(user);
+        var jwtToken = jwtService.generateToken(user);
 
-        return AuthResponse.builder()
-                .token(token)
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
                 .build();
     }
 
-    public AuthResponse authenticate(AuthRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
+        var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String token = jwtService.generateToken(user);
+        var jwtToken = jwtService.generateToken(user);
 
-        return AuthResponse.builder()
-                .token(token)
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
                 .build();
     }
 }

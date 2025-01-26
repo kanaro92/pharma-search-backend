@@ -5,7 +5,9 @@ import com.pharmasearch.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -14,33 +16,19 @@ import java.util.List;
 public class MessageController {
     private final MessageService messageService;
 
-    @PostMapping
+    @PostMapping("/{requestId}")
     public ResponseEntity<Message> sendMessage(
-            @RequestParam Long senderId,
-            @RequestParam Long receiverId,
-            @RequestParam String content,
-            @RequestParam(required = false) Long medicationRequestId) {
-        return ResponseEntity.ok(
-            messageService.sendMessage(senderId, receiverId, content, medicationRequestId)
-        );
+            @PathVariable Long requestId,
+            @RequestBody Map<String, String> request) {
+        String content = request.get("content");
+        Long receiverId = Long.parseLong(request.get("receiverId"));
+        Message message = messageService.sendMessage(requestId, content, receiverId);
+        return ResponseEntity.ok(message);
     }
 
-    @GetMapping("/conversation")
-    public ResponseEntity<List<Message>> getConversation(
-            @RequestParam Long senderId,
-            @RequestParam Long receiverId) {
-        return ResponseEntity.ok(messageService.getConversation(senderId, receiverId));
-    }
-
-    @GetMapping("/unread")
-    public ResponseEntity<List<Message>> getUnreadMessages(
-            @RequestParam Long userId) {
-        return ResponseEntity.ok(messageService.getUnreadMessages(userId));
-    }
-
-    @PostMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
-        messageService.markAsRead(id);
-        return ResponseEntity.ok().build();
+    @GetMapping("/request/{requestId}")
+    public ResponseEntity<List<Message>> getMessagesByRequest(@PathVariable Long requestId) {
+        List<Message> messages = messageService.getMessagesByRequest(requestId);
+        return ResponseEntity.ok(messages);
     }
 }
