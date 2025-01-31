@@ -43,11 +43,11 @@ public class MedicationInquiryService {
     public List<MedicationInquiry> getPendingInquiries() {
         User currentUser = userService.getCurrentUser();
         if ("PHARMACIST".equals(currentUser.getRole())) {
-            // Pharmacists see all pending inquiries
-            return inquiryRepository.findByStatus(InquiryStatus.PENDING);
+            // Pharmacists see all active inquiries (both pending and responded)
+            return inquiryRepository.findByStatusNot(InquiryStatus.CLOSED);
         } else {
-            // Regular users only see their own pending inquiries
-            return inquiryRepository.findByUserAndStatus(currentUser, InquiryStatus.PENDING);
+            // Regular users only see their own inquiries
+            return inquiryRepository.findByUserAndStatusNot(currentUser, InquiryStatus.CLOSED);
         }
     }
 
@@ -78,8 +78,9 @@ public class MedicationInquiryService {
 
         message = messageRepository.save(message);
 
-        // Update inquiry status when pharmacist responds
-        if ("PHARMACIST".equals(currentUser.getRole())) {
+        // Update inquiry status when pharmacist responds, but keep it visible
+        if ("PHARMACIST".equals(currentUser.getRole()) && 
+            InquiryStatus.PENDING.equals(inquiry.getStatus())) {
             inquiry.setStatus(InquiryStatus.RESPONDED);
             inquiryRepository.save(inquiry);
         }

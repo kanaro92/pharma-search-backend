@@ -37,4 +37,17 @@ public interface MedicationInquiryRepository extends JpaRepository<MedicationInq
             WHERE mi.status = :status
             """, nativeQuery = true)
     List<MedicationInquiry> findByStatus(@Param("status") String status);
+
+    @Query(value = """
+            SELECT mi.* FROM medication_inquiries mi 
+            WHERE mi.status != :status
+            """, nativeQuery = true)
+    List<MedicationInquiry> findByStatusNot(@Param("status") String status);
+
+    @Query(value = """
+            SELECT mi.* FROM medication_inquiries mi 
+            JOIN users u ON mi.user_id = u.id 
+            WHERE u.id = :#{#user.id} AND mi.status != :status
+            """, nativeQuery = true)
+    List<MedicationInquiry> findByUserAndStatusNot(@Param("user") User user, @Param("status") String status);
 }
