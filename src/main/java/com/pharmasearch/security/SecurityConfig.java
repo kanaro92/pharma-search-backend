@@ -39,6 +39,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // User endpoints
+                        .requestMatchers("/api/medications/search/**").hasRole("USER")
+                        .requestMatchers("/api/medications/request/**").hasRole("USER")
+                        // Pharmacist endpoints
+                        .requestMatchers("/api/pharmacy/**").hasRole("PHARMACIST")
+                        .requestMatchers("/api/inquiries/pharmacist/**").hasRole("PHARMACIST")
+                        // Common endpoints
+                        .requestMatchers("/api/inquiries/messages/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

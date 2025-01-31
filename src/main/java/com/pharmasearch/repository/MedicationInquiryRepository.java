@@ -1,5 +1,6 @@
 package com.pharmasearch.repository;
 
+import com.pharmasearch.constants.InquiryStatus;
 import com.pharmasearch.model.MedicationInquiry;
 import com.pharmasearch.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,4 +31,10 @@ public interface MedicationInquiryRepository extends JpaRepository<MedicationInq
             WHERE u.id = :#{#user.id} AND mi.status = :status
             """, nativeQuery = true)
     List<MedicationInquiry> findByUserAndStatus(@Param("user") User user, @Param("status") String status);
+
+    @Query(value = """
+            SELECT mi.* FROM medication_inquiries mi 
+            WHERE mi.status = :status
+            """, nativeQuery = true)
+    List<MedicationInquiry> findByStatus(@Param("status") String status);
 }

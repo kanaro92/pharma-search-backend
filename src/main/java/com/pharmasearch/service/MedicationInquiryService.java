@@ -41,7 +41,14 @@ public class MedicationInquiryService {
 
     @Transactional(readOnly = true)
     public List<MedicationInquiry> getPendingInquiries() {
-        return inquiryRepository.findByUserAndStatus(userService.getCurrentUser(), InquiryStatus.PENDING);
+        User currentUser = userService.getCurrentUser();
+        if ("PHARMACIST".equals(currentUser.getRole())) {
+            // Pharmacists see all pending inquiries
+            return inquiryRepository.findByStatus(InquiryStatus.PENDING);
+        } else {
+            // Regular users only see their own pending inquiries
+            return inquiryRepository.findByUserAndStatus(currentUser, InquiryStatus.PENDING);
+        }
     }
 
     @Transactional(readOnly = true)

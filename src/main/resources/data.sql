@@ -37,61 +37,66 @@ INSERT INTO users (name, email, password, role, enabled, dtype) VALUES
 ('Pharmacie Bastille', 'bastille@pharma.com', '$2a$10$VrTIA/tIGll46bhl6VdUK.Y4FlvbNHLGO9bF49OdKz.DbAYYlj1xi', 'PHARMACIST', true, 'Pharmacy');
 
 INSERT INTO pharmacies (id, address, latitude, longitude, opening_hours, phone_number)
-SELECT id, '5 Place de la Bastille, 75004 Paris', 48.8533, 2.3692, 'Mon-Sat: 9:00-20:00', '+33141111111'
+SELECT id, '5 Place de la Bastille, 75004 Paris', 48.8533, 2.3691, 'Mon-Sat: 9:00-20:00', '+33141111111'
 FROM users WHERE email = 'bastille@pharma.com';
 
--- Sample Pharmacies (Gif-sur-Yvette region)
 INSERT INTO users (name, email, password, role, enabled, dtype) VALUES
-('Pharmacie de Gif', 'gif@pharma.com', '$2a$10$VrTIA/tIGll46bhl6VdUK.Y4FlvbNHLGO9bF49OdKz.DbAYYlj1xi', 'PHARMACIST', true, 'Pharmacy');
-
-INSERT INTO pharmacies (id, address, latitude, longitude, opening_hours, phone_number)
-SELECT id, '12 Route de Chartres, Gif-sur-Yvette', 48.6824, 2.1679, 'Mon-Sat: 9:00-20:00', '+33169999999'
-FROM users WHERE email = 'gif@pharma.com';
-
-INSERT INTO users (name, email, password, role, enabled, dtype) VALUES
-('Pharmacie du Centre', 'centre@pharma.com', '$2a$10$VrTIA/tIGll46bhl6VdUK.Y4FlvbNHLGO9bF49OdKz.DbAYYlj1xi', 'PHARMACIST', true, 'Pharmacy');
-
-INSERT INTO pharmacies (id, address, latitude, longitude, opening_hours, phone_number)
-SELECT id, '2 Place du Marché Neuf, Gif-sur-Yvette', 48.6850, 2.1340, 'Mon-Sat: 9:00-20:00', '+33169888888'
-FROM users WHERE email = 'centre@pharma.com';
-
-INSERT INTO users (name, email, password, role, enabled, dtype) VALUES
-('Pharmacie de la Vallée', 'vallee@pharma.com', '$2a$10$VrTIA/tIGll46bhl6VdUK.Y4FlvbNHLGO9bF49OdKz.DbAYYlj1xi', 'PHARMACIST', true, 'Pharmacy');
-
-INSERT INTO pharmacies (id, address, latitude, longitude, opening_hours, phone_number)
-SELECT id, '15 Avenue du Général Leclerc, Gif-sur-Yvette', 48.6797, 2.1347, 'Mon-Sat: 9:00-20:00', '+33169777777'
-FROM users WHERE email = 'vallee@pharma.com';
-
--- Sample Pharmacies (Les Ulis region)
-INSERT INTO users (name, email, password, role, enabled, dtype) VALUES
-('Pharmacie des Ulis', 'ulis@pharma.com', '$2a$10$VrTIA/tIGll46bhl6VdUK.Y4FlvbNHLGO9bF49OdKz.DbAYYlj1xi', 'PHARMACIST', true, 'Pharmacy');
-
-INSERT INTO pharmacies (id, address, latitude, longitude, opening_hours, phone_number)
-SELECT id, '1 Avenue de Provence, Les Ulis', 48.6803, 2.1689, 'Mon-Sat: 9:00-20:00', '+33169666666'
-FROM users WHERE email = 'ulis@pharma.com';
-
-INSERT INTO users (name, email, password, role, enabled, dtype) VALUES
-('Pharmacie Centrale des Ulis', 'centrale.ulis@pharma.com', '$2a$10$VrTIA/tIGll46bhl6VdUK.Y4FlvbNHLGO9bF49OdKz.DbAYYlj1xi', 'PHARMACIST', true, 'Pharmacy');
+('Pharmacie Centrale Les Ulis', 'centrale.ulis@pharma.com', '$2a$10$VrTIA/tIGll46bhl6VdUK.Y4FlvbNHLGO9bF49OdKz.DbAYYlj1xi', 'PHARMACIST', true, 'Pharmacy');
 
 INSERT INTO pharmacies (id, address, latitude, longitude, opening_hours, phone_number)
 SELECT id, '5 Avenue des Champs Lasniers, Les Ulis', 48.6789, 2.1677, 'Mon-Sat: 9:00-20:00', '+33169555555'
 FROM users WHERE email = 'centrale.ulis@pharma.com';
 
+-- Sample Medications
+INSERT INTO medications (name, description, manufacturer, dosage, prescription_required) VALUES
+('Paracetamol', 'Pain reliever and fever reducer', 'Generic Pharma', '500mg', false),
+('Ibuprofen', 'Anti-inflammatory pain reliever', 'Generic Pharma', '400mg', false),
+('Amoxicillin', 'Antibiotic for bacterial infections', 'Generic Pharma', '500mg', true),
+('Omeprazole', 'Proton pump inhibitor for acid reflux', 'Generic Pharma', '20mg', true),
+('Loratadine', 'Antihistamine for allergies', 'Generic Pharma', '10mg', false);
+
+-- Sample Medication Stocks
+INSERT INTO medication_stocks (pharmacy_id, medication_id, quantity, price, batch_number, expiry_date)
+SELECT p.id, m.id, 100, 5.99, 'BATCH001', '2025-12-31'
+FROM pharmacies p, medications m 
+WHERE p.id = (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com')
+AND m.name = 'Paracetamol';
+
+INSERT INTO medication_stocks (pharmacy_id, medication_id, quantity, price, batch_number, expiry_date)
+SELECT p.id, m.id, 50, 7.99, 'BATCH002', '2025-12-31'
+FROM pharmacies p, medications m 
+WHERE p.id = (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com')
+AND m.name = 'Ibuprofen';
+
 -- Sample Medication Inquiries
 INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, user_id)
-SELECT 'Aspirin', 'Need information about dosage', 'PENDING', CURRENT_TIMESTAMP, id
-FROM users WHERE email = 'test@example.com';
+SELECT 
+    'Paracetamol',
+    'I need information about the proper dosage for my child who is 8 years old.',
+    'PENDING',
+    CURRENT_TIMESTAMP,
+    id
+FROM users 
+WHERE email = 'test@example.com';
 
--- Sample Medication Requests
-INSERT INTO medication_requests (medication_name, quantity, note, status, created_at, updated_at, user_id, pharmacy_id)
-WITH user_data AS (
-    SELECT id FROM users WHERE email = 'test@example.com'
-),
-pharmacy_data AS (
-    SELECT p.id FROM pharmacies p 
-    JOIN users u ON p.id = u.id 
-    WHERE u.email = 'centrale.ulis@pharma.com'
-)
-SELECT 'Paracetamol', 2, 'Urgent request', 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-       (SELECT id FROM user_data),
-       (SELECT id FROM pharmacy_data);
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, user_id)
+SELECT 
+    'Ibuprofen',
+    'Can this be taken together with paracetamol?',
+    'PENDING',
+    CURRENT_TIMESTAMP,
+    id
+FROM users 
+WHERE email = 'test@example.com';
+
+-- Sample Inquiry Messages
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'Hello, I need help with this medication.',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'test@example.com'
+AND i.medication_name = 'Paracetamol';

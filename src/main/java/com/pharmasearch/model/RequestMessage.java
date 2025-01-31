@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "inquiry_messages")
+@Table(name = "request_messages")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class InquiryMessage {
+public class RequestMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,9 +28,9 @@ public class InquiryMessage {
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "inquiry_id", nullable = false)
+    @JoinColumn(name = "request_id", nullable = false)
     @JsonIgnoreProperties({"messages", "hibernateLazyInitializer", "handler"})
-    private MedicationInquiry inquiry;
+    private MedicationRequest request;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sender_id", nullable = false)

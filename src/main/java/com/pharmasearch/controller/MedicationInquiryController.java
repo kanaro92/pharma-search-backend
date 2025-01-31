@@ -6,6 +6,7 @@ import com.pharmasearch.service.MedicationInquiryService;
 import com.pharmasearch.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,6 +42,7 @@ public class MedicationInquiryController {
     }
 
     @GetMapping("/pending")
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<List<MedicationInquiry>> getPendingInquiries() {
         List<MedicationInquiry> inquiries = medicationInquiryService.getPendingInquiries();
         return ResponseEntity.ok(inquiries);
@@ -53,6 +55,7 @@ public class MedicationInquiryController {
     }
 
     @PostMapping("/{inquiryId}/messages")
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<InquiryMessage> addMessage(
             @PathVariable Long inquiryId,
             @RequestBody Map<String, String> request) {
@@ -62,6 +65,7 @@ public class MedicationInquiryController {
     }
 
     @PostMapping("/{inquiryId}/close")
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<Void> closeInquiry(@PathVariable Long inquiryId) {
         medicationInquiryService.closeInquiry(inquiryId);
         return ResponseEntity.ok().build();
