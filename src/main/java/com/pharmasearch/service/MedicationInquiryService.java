@@ -50,12 +50,18 @@ public class MedicationInquiryService {
         return inquiryRepository.findByUserId(currentUser.getId());
     }
 
-    @Transactional
-    public InquiryMessage addMessage(Long inquiryId, String content) {
+    @Transactional(readOnly = true)
+    public List<InquiryMessage> getMessages(Long inquiryId) {
         MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
                 .orElseThrow(() -> new RuntimeException("Inquiry not found"));
+        return messageRepository.findByInquiryOrderByCreatedAtAsc(inquiry);
+    }
 
+    @Transactional
+    public InquiryMessage addMessage(Long inquiryId, String content) {
         User currentUser = userService.getCurrentUser();
+        MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
+                .orElseThrow(() -> new RuntimeException("Inquiry not found"));
 
         InquiryMessage message = InquiryMessage.builder()
                 .content(content)

@@ -46,6 +46,12 @@ public class MedicationInquiryController {
         return ResponseEntity.ok(inquiries);
     }
 
+    @GetMapping("/{inquiryId}/messages")
+    public ResponseEntity<List<InquiryMessage>> getMessages(@PathVariable Long inquiryId) {
+        List<InquiryMessage> messages = medicationInquiryService.getMessages(inquiryId);
+        return ResponseEntity.ok(messages);
+    }
+
     @PostMapping("/{inquiryId}/messages")
     public ResponseEntity<InquiryMessage> addMessage(
             @PathVariable Long inquiryId,
