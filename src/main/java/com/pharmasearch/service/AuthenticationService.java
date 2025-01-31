@@ -61,20 +61,20 @@ public class AuthenticationService {
                     .enabled(true)
                     .build();
 
-            userRepository.save(user);
+            user = userRepository.save(user);
+            log.info("Successfully registered user: {}", user.getEmail());
+
             Map<String, Object> claims = createUserClaims(user);
             var jwtToken = jwtService.generateToken(claims, user);
 
             var userDto = AuthenticationResponse.UserDTO.fromUser(user);
-            log.info("Successfully registered user: {} with role: {}", user.getEmail(), user.getRole());
-            
             return AuthenticationResponse.builder()
                     .token(jwtToken)
                     .user(userDto)
                     .build();
         } catch (Exception e) {
-            log.error("Error during registration for email: {}", request.getEmail(), e);
-            throw new RuntimeException("Registration failed", e);
+            log.error("Registration failed with error: ", e);
+            throw e;
         }
     }
 
@@ -98,17 +98,40 @@ public class AuthenticationService {
 
             var userDto = AuthenticationResponse.UserDTO.fromUser(user);
             log.info("Successfully authenticated user: {}", user.getEmail());
-            
+
             return AuthenticationResponse.builder()
                     .token(jwtToken)
                     .user(userDto)
                     .build();
         } catch (BadCredentialsException e) {
             log.error("Authentication failed: Invalid credentials for user - {}", request.getEmail());
-            throw new BadCredentialsException("Invalid email or password");
+            throw e;
         } catch (Exception e) {
-            log.error("Error during authentication for user: {}", request.getEmail(), e);
-            throw new RuntimeException("Authentication failed", e);
+            log.error("Authentication failed with error: ", e);
+            throw e;
+        }
+    }
+
+    public AuthenticationResponse refreshToken(String email) {
+        try {
+            log.debug("Attempting to refresh token for user: {}", email);
+
+            var user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            Map<String, Object> claims = createUserClaims(user);
+            var newToken = jwtService.generateToken(claims, user);
+
+            log.info("Successfully refreshed token for user: {}", email);
+            
+            var userDto = AuthenticationResponse.UserDTO.fromUser(user);
+            return AuthenticationResponse.builder()
+                    .token(newToken)
+                    .user(userDto)
+                    .build();
+        } catch (Exception e) {
+            log.error("Token refresh failed with error: ", e);
+            throw e;
         }
     }
 }
