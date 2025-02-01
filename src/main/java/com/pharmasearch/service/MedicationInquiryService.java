@@ -43,10 +43,11 @@ public class MedicationInquiryService {
     public List<MedicationInquiry> getPendingInquiries() {
         User currentUser = userService.getCurrentUser();
         if ("PHARMACIST".equals(currentUser.getRole())) {
-            // Pharmacists see all active inquiries (both pending and responded)
-            return inquiryRepository.findByStatusNot(InquiryStatus.CLOSED);
+            // Pharmacists see both new inquiries and ones they're already responding to
+            return inquiryRepository.findByStatusNotAndRespondingPharmacyIsNullOrRespondingPharmacy(
+                InquiryStatus.CLOSED, currentUser);
         } else {
-            // Regular users only see their own inquiries
+            // Regular users only see their own inquiries that aren't closed
             return inquiryRepository.findByUserAndStatusNot(currentUser, InquiryStatus.CLOSED);
         }
     }
@@ -54,13 +55,31 @@ public class MedicationInquiryService {
     @Transactional(readOnly = true)
     public List<MedicationInquiry> getInquiriesForCurrentUser() {
         User currentUser = userService.getCurrentUser();
-        return inquiryRepository.findByUserId(currentUser.getId());
+        if ("PHARMACIST".equals(currentUser.getRole())) {
+            // Pharmacists see inquiries they've responded to
+            return inquiryRepository.findByRespondingPharmacy(currentUser);
+        } else {
+            // Regular users see their own inquiries
+            return inquiryRepository.findByUserId(currentUser.getId());
+        }
     }
 
     @Transactional(readOnly = true)
     public List<InquiryMessage> getMessages(Long inquiryId) {
+        User currentUser = userService.getCurrentUser();
         MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
                 .orElseThrow(() -> new RuntimeException("Inquiry not found"));
+
+        // Verify the user has access to this inquiry
+        if ("PHARMACIST".equals(currentUser.getRole())) {
+            if (inquiry.getRespondingPharmacy() != null && 
+                !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
+                throw new RuntimeException("You don't have access to this inquiry");
+            }
+        } else if (!inquiry.getUser().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("You don't have access to this inquiry");
+        }
+
         return messageRepository.findByInquiryOrderByCreatedAtAsc(inquiry);
     }
 
@@ -70,6 +89,15 @@ public class MedicationInquiryService {
         MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
                 .orElseThrow(() -> new RuntimeException("Inquiry not found"));
 
+        // If this is a pharmacist's first response, set them as the responding pharmacy
+        if ("PHARMACIST".equals(currentUser.getRole())) {
+            if (inquiry.getRespondingPharmacy() == null) {
+                inquiry.setRespondingPharmacy(currentUser);
+            } else if (!inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
+                throw new RuntimeException("Another pharmacy has already responded to this inquiry");
+            }
+        }
+
         InquiryMessage message = InquiryMessage.builder()
                 .content(content)
                 .inquiry(inquiry)
@@ -78,7 +106,7 @@ public class MedicationInquiryService {
 
         message = messageRepository.save(message);
 
-        // Update inquiry status when pharmacist responds, but keep it visible
+        // Update inquiry status when pharmacist responds
         if ("PHARMACIST".equals(currentUser.getRole()) && 
             InquiryStatus.PENDING.equals(inquiry.getStatus())) {
             inquiry.setStatus(InquiryStatus.RESPONDED);
@@ -90,8 +118,14 @@ public class MedicationInquiryService {
 
     @Transactional
     public void closeInquiry(Long inquiryId) {
+        User currentUser = userService.getCurrentUser();
         MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
                 .orElseThrow(() -> new RuntimeException("Inquiry not found"));
+        
+        // Only the responding pharmacy can close the inquiry
+        if (!inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Only the responding pharmacy can close this inquiry");
+        }
         
         inquiry.setStatus(InquiryStatus.CLOSED);
         inquiryRepository.save(inquiry);

@@ -62,8 +62,11 @@ CREATE TABLE medication_inquiries (
     patient_note TEXT,
     status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
     user_id BIGINT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    responding_pharmacy_id BIGINT,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (responding_pharmacy_id) REFERENCES users(id)
 );
 
 -- Create medication requests table

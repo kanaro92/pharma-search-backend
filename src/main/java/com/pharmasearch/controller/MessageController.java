@@ -16,19 +16,21 @@ import java.util.Map;
 public class MessageController {
     private final MessageService messageService;
 
-    @PostMapping("/{requestId}")
+    @GetMapping
+    public ResponseEntity<List<Message>> getMessages(
+            @RequestParam Long requestId,
+            @RequestParam Long otherUserId) {
+        List<Message> messages = messageService.getMessagesByRequest(requestId);
+        return ResponseEntity.ok(messages);
+    }
+
+    @PostMapping
     public ResponseEntity<Message> sendMessage(
-            @PathVariable Long requestId,
+            @RequestParam Long requestId,
             @RequestBody Map<String, String> request) {
         String content = request.get("content");
         Long receiverId = Long.parseLong(request.get("receiverId"));
         Message message = messageService.sendMessage(requestId, content, receiverId);
         return ResponseEntity.ok(message);
-    }
-
-    @GetMapping("/request/{requestId}")
-    public ResponseEntity<List<Message>> getMessagesByRequest(@PathVariable Long requestId) {
-        List<Message> messages = messageService.getMessagesByRequest(requestId);
-        return ResponseEntity.ok(messages);
     }
 }

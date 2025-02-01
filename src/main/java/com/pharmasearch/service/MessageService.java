@@ -31,6 +31,12 @@ public class MessageService {
             throw new RuntimeException("You don't have permission to send messages for this request");
         }
 
+        // Verify that the receiver is either the user or the pharmacy of this request
+        if (!receiver.getId().equals(request.getUser().getId()) &&
+            !receiver.getId().equals(request.getPharmacy().getId())) {
+            throw new RuntimeException("Invalid receiver for this medication request");
+        }
+
         Message message = new Message();
         message.setRequest(request);
         message.setSender(currentUser);
@@ -51,6 +57,14 @@ public class MessageService {
             throw new RuntimeException("You don't have permission to view these messages");
         }
 
-        return messageRepository.findByRequestOrderByCreatedAtAsc(request);
+        // Get messages between the current user and their conversation partner
+        User conversationPartner;
+        if (currentUser.getId().equals(request.getUser().getId())) {
+            conversationPartner = request.getPharmacy();
+        } else {
+            conversationPartner = request.getUser();
+        }
+
+        return messageRepository.findMessagesBetweenUsers(request, currentUser, conversationPartner);
     }
 }

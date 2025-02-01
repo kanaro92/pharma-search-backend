@@ -12,42 +12,18 @@ import java.util.List;
 
 @Repository
 public interface MedicationInquiryRepository extends JpaRepository<MedicationInquiry, Long> {
-    @Query(value = """
-            SELECT mi.* FROM medication_inquiries mi 
-            WHERE mi.user_id = :userId
-            """, nativeQuery = true)
-    List<MedicationInquiry> findByUserId(@Param("userId") Long userId);
+    List<MedicationInquiry> findByUser(User user);
+    List<MedicationInquiry> findByUserId(Long userId);
+    List<MedicationInquiry> findByUserAndStatusNot(User user, String status);
+    List<MedicationInquiry> findByRespondingPharmacy(User pharmacy);
+    
+    @Query("SELECT i FROM MedicationInquiry i WHERE i.status = :status AND " +
+           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy)")
+    List<MedicationInquiry> findByStatusAndRespondingPharmacyIsNullOrRespondingPharmacy(
+        @Param("status") String status, @Param("pharmacy") User pharmacy);
 
-    @Query(value = """
-            SELECT mi.* FROM medication_inquiries mi 
-            JOIN users u ON mi.user_id = u.id 
-            WHERE u.id = :#{#user.id}
-            """, nativeQuery = true)
-    List<MedicationInquiry> findByUser(@Param("user") User user);
-
-    @Query(value = """
-            SELECT mi.* FROM medication_inquiries mi 
-            JOIN users u ON mi.user_id = u.id 
-            WHERE u.id = :#{#user.id} AND mi.status = :status
-            """, nativeQuery = true)
-    List<MedicationInquiry> findByUserAndStatus(@Param("user") User user, @Param("status") String status);
-
-    @Query(value = """
-            SELECT mi.* FROM medication_inquiries mi 
-            WHERE mi.status = :status
-            """, nativeQuery = true)
-    List<MedicationInquiry> findByStatus(@Param("status") String status);
-
-    @Query(value = """
-            SELECT mi.* FROM medication_inquiries mi 
-            WHERE mi.status != :status
-            """, nativeQuery = true)
-    List<MedicationInquiry> findByStatusNot(@Param("status") String status);
-
-    @Query(value = """
-            SELECT mi.* FROM medication_inquiries mi 
-            JOIN users u ON mi.user_id = u.id 
-            WHERE u.id = :#{#user.id} AND mi.status != :status
-            """, nativeQuery = true)
-    List<MedicationInquiry> findByUserAndStatusNot(@Param("user") User user, @Param("status") String status);
+    @Query("SELECT i FROM MedicationInquiry i WHERE i.status <> :status AND " +
+           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy)")
+    List<MedicationInquiry> findByStatusNotAndRespondingPharmacyIsNullOrRespondingPharmacy(
+        @Param("status") String status, @Param("pharmacy") User pharmacy);
 }

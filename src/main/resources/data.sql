@@ -69,21 +69,23 @@ WHERE p.id = (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com')
 AND m.name = 'Ibuprofen';
 
 -- Sample Medication Inquiries
-INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, user_id)
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id)
 SELECT 
     'Paracetamol',
     'I need information about the proper dosage for my child who is 8 years old.',
     'PENDING',
     CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
     id
 FROM users 
 WHERE email = 'test@example.com';
 
-INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, user_id)
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id)
 SELECT 
     'Ibuprofen',
     'Can this be taken together with paracetamol?',
     'PENDING',
+    CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP,
     id
 FROM users 
