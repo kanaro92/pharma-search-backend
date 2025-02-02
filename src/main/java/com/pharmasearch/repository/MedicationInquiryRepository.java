@@ -13,18 +13,20 @@ import java.util.List;
 
 @Repository
 public interface MedicationInquiryRepository extends JpaRepository<MedicationInquiry, Long> {
-    List<MedicationInquiry> findByUser(User user);
-    List<MedicationInquiry> findByUserId(Long userId);
-    List<MedicationInquiry> findByUserAndStatusNot(User user, String status);
-    List<MedicationInquiry> findByRespondingPharmacy(User pharmacy);
+    List<MedicationInquiry> findByUserOrderByCreatedAtDesc(User user);
+    List<MedicationInquiry> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<MedicationInquiry> findByUserAndStatusNotOrderByCreatedAtDesc(User user, String status);
+    List<MedicationInquiry> findByRespondingPharmacyOrderByCreatedAtDesc(User pharmacy);
     
     @Query("SELECT i FROM MedicationInquiry i WHERE i.status = :status AND " +
-           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy)")
+           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy) " +
+           "ORDER BY i.createdAt DESC")
     List<MedicationInquiry> findByStatusAndRespondingPharmacyIsNullOrRespondingPharmacy(
         @Param("status") String status, @Param("pharmacy") User pharmacy);
 
     @Query("SELECT i FROM MedicationInquiry i WHERE i.status <> :status AND " +
-           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy)")
+           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy) " +
+           "ORDER BY i.createdAt DESC")
     List<MedicationInquiry> findByStatusNotAndRespondingPharmacyIsNullOrRespondingPharmacy(
         @Param("status") String status, @Param("pharmacy") User pharmacy);
 

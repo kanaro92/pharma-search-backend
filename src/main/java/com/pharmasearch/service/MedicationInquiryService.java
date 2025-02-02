@@ -36,7 +36,7 @@ public class MedicationInquiryService {
     @Transactional(readOnly = true)
     public List<MedicationInquiry> getUserInquiries() {
         User currentUser = userService.getCurrentUser();
-        return inquiryRepository.findByUser(currentUser);
+        return inquiryRepository.findByUserOrderByCreatedAtDesc(currentUser);
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +48,7 @@ public class MedicationInquiryService {
                 InquiryStatus.CLOSED, currentUser);
         } else {
             // Regular users only see their own inquiries that aren't closed
-            return inquiryRepository.findByUserAndStatusNot(currentUser, InquiryStatus.CLOSED);
+            return inquiryRepository.findByUserAndStatusNotOrderByCreatedAtDesc(currentUser, InquiryStatus.CLOSED);
         }
     }
 
@@ -57,10 +57,10 @@ public class MedicationInquiryService {
         User currentUser = userService.getCurrentUser();
         if ("PHARMACIST".equals(currentUser.getRole())) {
             // Pharmacists see inquiries they've responded to
-            return inquiryRepository.findByRespondingPharmacy(currentUser);
+            return inquiryRepository.findByRespondingPharmacyOrderByCreatedAtDesc(currentUser);
         } else {
             // Regular users see their own inquiries
-            return inquiryRepository.findByUserId(currentUser.getId());
+            return inquiryRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
         }
     }
 
@@ -93,6 +93,8 @@ public class MedicationInquiryService {
         if ("PHARMACIST".equals(currentUser.getRole())) {
             if (inquiry.getRespondingPharmacy() == null) {
                 inquiry.setRespondingPharmacy(currentUser);
+                inquiry.setStatus(InquiryStatus.RESPONDED);
+                inquiryRepository.save(inquiry);
             } else if (!inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
                 throw new RuntimeException("Another pharmacy has already responded to this inquiry");
             }
@@ -100,20 +102,11 @@ public class MedicationInquiryService {
 
         InquiryMessage message = InquiryMessage.builder()
                 .content(content)
-                .inquiry(inquiry)
                 .sender(currentUser)
+                .inquiry(inquiry)
                 .build();
 
-        message = messageRepository.save(message);
-
-        // Update inquiry status when pharmacist responds
-        if ("PHARMACIST".equals(currentUser.getRole()) && 
-            InquiryStatus.PENDING.equals(inquiry.getStatus())) {
-            inquiry.setStatus(InquiryStatus.RESPONDED);
-            inquiryRepository.save(inquiry);
-        }
-
-        return message;
+        return messageRepository.save(message);
     }
 
     @Transactional
@@ -121,12 +114,16 @@ public class MedicationInquiryService {
         User currentUser = userService.getCurrentUser();
         MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
                 .orElseThrow(() -> new RuntimeException("Inquiry not found"));
-        
-        // Only the responding pharmacy can close the inquiry
-        if (!inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Only the responding pharmacy can close this inquiry");
+
+        if (!currentUser.getRole().equals("PHARMACIST")) {
+            throw new RuntimeException("Only pharmacists can close inquiries");
         }
-        
+
+        if (inquiry.getRespondingPharmacy() == null || 
+            !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("You don't have permission to close this inquiry");
+        }
+
         inquiry.setStatus(InquiryStatus.CLOSED);
         inquiryRepository.save(inquiry);
     }
