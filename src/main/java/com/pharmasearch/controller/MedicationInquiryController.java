@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/medication-inquiries")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 @CrossOrigin("*")
 public class MedicationInquiryController {
     private final MedicationInquiryService medicationInquiryService;
     private final UserService userService;
 
-    @PostMapping
+    @PostMapping("/medication-inquiries")
     public ResponseEntity<MedicationInquiry> createInquiry(@RequestBody Map<String, String> request) {
         String medicationName = request.get("medicationName");
         String patientNote = request.get("patientNote");
@@ -29,32 +29,40 @@ public class MedicationInquiryController {
         return ResponseEntity.ok(inquiry);
     }
 
-    @GetMapping("/my")
+    @GetMapping("/medication-inquiries/my")
     public ResponseEntity<List<MedicationInquiry>> getMyInquiries() {
         List<MedicationInquiry> inquiries = medicationInquiryService.getInquiriesForCurrentUser();
         return ResponseEntity.ok(inquiries);
     }
 
-    @GetMapping
+    @GetMapping("/medication-inquiries")
     public ResponseEntity<List<MedicationInquiry>> getUserInquiries() {
         List<MedicationInquiry> inquiries = medicationInquiryService.getUserInquiries();
         return ResponseEntity.ok(inquiries);
     }
 
-    @GetMapping("/pending")
+    @GetMapping("/medication-inquiries/pending")
     @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<List<MedicationInquiry>> getPendingInquiries() {
         List<MedicationInquiry> inquiries = medicationInquiryService.getPendingInquiries();
         return ResponseEntity.ok(inquiries);
     }
 
-    @GetMapping("/{inquiryId}/messages")
+    // New endpoint specifically for pharmacists
+    @GetMapping("/pharmacist/inquiries")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<List<MedicationInquiry>> getPharmacistInquiries() {
+        List<MedicationInquiry> inquiries = medicationInquiryService.getPendingInquiries();
+        return ResponseEntity.ok(inquiries);
+    }
+
+    @GetMapping("/medication-inquiries/{inquiryId}/messages")
     public ResponseEntity<List<InquiryMessage>> getMessages(@PathVariable Long inquiryId) {
         List<InquiryMessage> messages = medicationInquiryService.getMessages(inquiryId);
         return ResponseEntity.ok(messages);
     }
 
-    @PostMapping("/{inquiryId}/messages")
+    @PostMapping("/medication-inquiries/{inquiryId}/messages")
     @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<InquiryMessage> addMessage(
             @PathVariable Long inquiryId,
@@ -64,7 +72,7 @@ public class MedicationInquiryController {
         return ResponseEntity.ok(message);
     }
 
-    @PostMapping("/{inquiryId}/close")
+    @PostMapping("/medication-inquiries/{inquiryId}/close")
     @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<Void> closeInquiry(@PathVariable Long inquiryId) {
         medicationInquiryService.closeInquiry(inquiryId);
