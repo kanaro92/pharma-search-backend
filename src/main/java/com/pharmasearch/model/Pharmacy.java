@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
-@Builder
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -49,11 +49,4 @@ public class Pharmacy extends User {
 
     @Transient
     private Double distance;
-
-    public static class PharmacyBuilder extends UserBuilder {
-        PharmacyBuilder() {
-            super();
-            enabled(true);
-        }
-    }
 }

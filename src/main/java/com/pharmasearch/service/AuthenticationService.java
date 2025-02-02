@@ -5,7 +5,9 @@ import com.pharmasearch.dto.AuthenticationRequest;
 import com.pharmasearch.dto.AuthenticationResponse;
 import com.pharmasearch.dto.RegisterRequest;
 import com.pharmasearch.model.User;
+import com.pharmasearch.model.Pharmacy;
 import com.pharmasearch.repository.UserRepository;
+import com.pharmasearch.repository.PharmacyRepository;
 import com.pharmasearch.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import java.util.Map;
 @Slf4j
 public class AuthenticationService {
     private final UserRepository userRepository;
+    private final PharmacyRepository pharmacyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -42,26 +45,47 @@ public class AuthenticationService {
         try {
             log.debug("Attempting to register user with email: {}", request.getEmail());
 
+            // Validate role
+            String role = request.getRole();
+            if (role == null || role.isEmpty()) {
+                role = UserRoles.USER; // Default role
+            } else if (!role.equals(UserRoles.USER) && !role.equals(UserRoles.PHARMACIST)) {
+                throw new IllegalArgumentException("Invalid role. Must be either USER or PHARMACIST");
+            }
+
+            // Check if email already exists
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
                 log.error("Registration failed: Email already exists - {}", request.getEmail());
-                throw new RuntimeException("Email already exists");
+                throw new IllegalArgumentException("Email already registered");
             }
 
-            // Default to USER role if not specified or invalid
-            String role = request.getRole();
-            if (role == null || (!role.equals(UserRoles.PHARMACIST) && !role.equals(UserRoles.USER))) {
-                role = UserRoles.USER;
+            User user;
+            if (UserRoles.PHARMACIST.equals(role)) {
+                // Create pharmacy user
+                var pharmacy = Pharmacy.builder()
+                        .name(request.getName())
+                        .email(request.getEmail())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .role(role)
+                        .enabled(true)
+                        // Set default values for required fields
+                        .address("Please update your address")
+                        .latitude(0.0)
+                        .longitude(0.0)
+                        .build();
+                user = pharmacyRepository.save(pharmacy);
+            } else {
+                // Create regular user
+                user = User.builder()
+                        .name(request.getName())
+                        .email(request.getEmail())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .role(role)
+                        .enabled(true)
+                        .build();
+                user = userRepository.save(user);
             }
 
-            var user = User.builder()
-                    .name(request.getName())
-                    .email(request.getEmail())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .role(role)
-                    .enabled(true)
-                    .build();
-
-            user = userRepository.save(user);
             log.info("Successfully registered user: {}", user.getEmail());
 
             Map<String, Object> claims = createUserClaims(user);
