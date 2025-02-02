@@ -69,27 +69,55 @@ WHERE p.id = (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com')
 AND m.name = 'Ibuprofen';
 
 -- Sample Medication Inquiries
-INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id)
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
 SELECT 
     'Paracetamol',
     'I need information about the proper dosage for my child who is 8 years old.',
     'PENDING',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP,
-    id
-FROM users 
-WHERE email = 'test@example.com';
+    (SELECT id FROM users WHERE email = 'test@example.com'),
+    (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
 
-INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id)
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
 SELECT 
     'Ibuprofen',
     'Can this be taken together with paracetamol?',
     'PENDING',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP,
-    id
-FROM users 
-WHERE email = 'test@example.com';
+    (SELECT id FROM users WHERE email = 'test@example.com'),
+    (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
+
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
+SELECT 
+    'Amoxicillin',
+    'Do you have this antibiotic in stock?',
+    'RESPONDED',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    (SELECT id FROM users WHERE email = 'test@example.com'),
+    (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
+
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
+SELECT 
+    'Omeprazole',
+    'What is the recommended duration for taking this medication?',
+    'RESPONDED',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    (SELECT id FROM users WHERE email = 'test@example.com'),
+    (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
+
+INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
+SELECT 
+    'Loratadine',
+    'Is this safe to take during pregnancy?',
+    'RESPONDED',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    (SELECT id FROM users WHERE email = 'test@example.com'),
+    (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
 
 -- Sample Inquiry Messages
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
@@ -102,3 +130,80 @@ FROM medication_inquiries i
 CROSS JOIN users u
 WHERE u.email = 'test@example.com'
 AND i.medication_name = 'Paracetamol';
+
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'Please let me know if you have any questions.',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'tour.eiffel@pharma.com'
+AND i.medication_name = 'Paracetamol';
+
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'Can you provide more information about the dosage?',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'test@example.com'
+AND i.medication_name = 'Ibuprofen';
+
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'Yes, we have it in stock.',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'tour.eiffel@pharma.com'
+AND i.medication_name = 'Amoxicillin';
+
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'How long should I take this medication?',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'test@example.com'
+AND i.medication_name = 'Omeprazole';
+
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'You should take it for 2 weeks.',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'tour.eiffel@pharma.com'
+AND i.medication_name = 'Omeprazole';
+
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'Is this medication safe during pregnancy?',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'test@example.com'
+AND i.medication_name = 'Loratadine';
+
+INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
+SELECT 
+    'Yes, it is safe.',
+    CURRENT_TIMESTAMP,
+    i.id,
+    u.id
+FROM medication_inquiries i
+CROSS JOIN users u
+WHERE u.email = 'tour.eiffel@pharma.com'
+AND i.medication_name = 'Loratadine';
