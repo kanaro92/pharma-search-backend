@@ -5,6 +5,7 @@ import com.pharmasearch.dto.PharmacyRegistrationDTO;
 import com.pharmasearch.dto.PharmacyStatisticsDTO;
 import com.pharmasearch.model.Pharmacy;
 import com.pharmasearch.model.PharmacyWithDistance;
+import com.pharmasearch.model.PharmacyWithDistanceImpl;
 import com.pharmasearch.service.PharmacyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +54,14 @@ public class PharmacyController {
             @RequestParam Double longitude,
             @RequestParam(defaultValue = "5.0") Double radius) {
         return ResponseEntity.ok(pharmacyService.findNearbyPharmacies(latitude, longitude));
+    }
+
+    @GetMapping("/pharmacies/search")
+    public ResponseEntity<List<PharmacyWithDistanceImpl>> searchPharmacies(
+            @RequestParam String query,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude) {
+        return ResponseEntity.ok(pharmacyService.searchPharmacies(query, latitude, longitude));
     }
 
     // New pharmacy management endpoints

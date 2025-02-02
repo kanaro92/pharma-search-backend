@@ -5,10 +5,13 @@ import com.pharmasearch.dto.PharmacyStatisticsDTO;
 import com.pharmasearch.model.MedicationInquiry;
 import com.pharmasearch.model.Pharmacy;
 import com.pharmasearch.model.PharmacyWithDistance;
+import com.pharmasearch.model.PharmacyWithDistanceImpl;
 import com.pharmasearch.repository.MedicationInquiryRepository;
 import com.pharmasearch.repository.PharmacyRepository;
 import com.pharmasearch.constants.InquiryStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -111,5 +114,17 @@ public class PharmacyService {
                 .pendingInquiries(pendingInquiries)
                 .resolvedInquiries(resolvedInquiries)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PharmacyWithDistanceImpl> searchPharmacies(String query, Double latitude, Double longitude) {
+        Pageable pageable = PageRequest.of(0, MAX_RESULTS);
+        if (latitude != null && longitude != null) {
+            return pharmacyRepository.searchNearbyPharmacies(query, latitude, longitude, MAX_DISTANCE, pageable);
+        } else {
+            return pharmacyRepository.searchPharmacies(query, pageable).stream()
+                .map(pharmacy -> new PharmacyWithDistanceImpl(pharmacy, null))
+                .toList();
+        }
     }
 }

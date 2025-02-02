@@ -2,6 +2,8 @@ package com.pharmasearch.repository;
 
 import com.pharmasearch.model.Pharmacy;
 import com.pharmasearch.model.PharmacyWithDistance;
+import com.pharmasearch.model.PharmacyWithDistanceImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -60,4 +62,53 @@ public interface PharmacyRepository extends JpaRepository<Pharmacy, Long> {
     List<Pharmacy> findByLatitudeBetweenAndLongitudeBetween(
             Double latMin, Double latMax,
             Double lonMin, Double lonMax);
+
+    @Query("""
+        SELECT new com.pharmasearch.model.PharmacyWithDistanceImpl(
+            p,
+            6371.0 * function('acos',
+                function('cos', function('radians', :latitude)) *
+                function('cos', function('radians', p.latitude)) *
+                function('cos', function('radians', p.longitude) - function('radians', :longitude)) +
+                function('sin', function('radians', :latitude)) *
+                function('sin', function('radians', p.latitude))
+            )
+        )
+        FROM Pharmacy p
+        WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(p.address) LIKE LOWER(CONCAT('%', :query, '%')))
+        AND 6371.0 * function('acos',
+            function('cos', function('radians', :latitude)) *
+            function('cos', function('radians', p.latitude)) *
+            function('cos', function('radians', p.longitude) - function('radians', :longitude)) +
+            function('sin', function('radians', :latitude)) *
+            function('sin', function('radians', p.latitude))
+        ) <= :maxDistance
+        ORDER BY 6371.0 * function('acos',
+            function('cos', function('radians', :latitude)) *
+            function('cos', function('radians', p.latitude)) *
+            function('cos', function('radians', p.longitude) - function('radians', :longitude)) +
+            function('sin', function('radians', :latitude)) *
+            function('sin', function('radians', p.latitude))
+        )
+        """)
+    List<PharmacyWithDistanceImpl> searchNearbyPharmacies(
+        @Param("query") String query,
+        @Param("latitude") double latitude,
+        @Param("longitude") double longitude,
+        @Param("maxDistance") double maxDistance,
+        Pageable pageable
+    );
+
+    @Query("""
+        SELECT p
+        FROM Pharmacy p
+        WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(p.address) LIKE LOWER(CONCAT('%', :query, '%'))
+        ORDER BY p.name
+        """)
+    List<Pharmacy> searchPharmacies(
+        @Param("query") String query,
+        Pageable pageable
+    );
 }
