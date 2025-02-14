@@ -47,6 +47,11 @@ INSERT INTO pharmacies (id, address, latitude, longitude, opening_hours, phone_n
 SELECT id, '5 Avenue des Champs Lasniers, Les Ulis', 48.6789, 2.1677, 'Mon-Sat: 9:00-20:00', '+33169555555'
 FROM users WHERE email = 'centrale.ulis@pharma.com';
 
+-- Sample FCM Tokens for pharmacists
+INSERT INTO fcm_tokens (user_id, token, created_at, last_used_at, is_active)
+SELECT id, 'sample_fcm_token_' || id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true
+FROM users WHERE role = 'PHARMACIST';
+
 -- Sample Medications
 INSERT INTO medications (name, description, manufacturer, dosage, prescription_required) VALUES
 ('Paracetamol', 'Pain reliever and fever reducer', 'Generic Pharma', '500mg', false),
@@ -58,19 +63,19 @@ INSERT INTO medications (name, description, manufacturer, dosage, prescription_r
 -- Sample Medication Stocks
 INSERT INTO medication_stocks (pharmacy_id, medication_id, quantity, price, batch_number, expiry_date)
 SELECT p.id, m.id, 100, 5.99, 'BATCH001', '2025-12-31'
-FROM pharmacies p, medications m 
+FROM pharmacies p, medications m
 WHERE p.id = (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com')
 AND m.name = 'Paracetamol';
 
 INSERT INTO medication_stocks (pharmacy_id, medication_id, quantity, price, batch_number, expiry_date)
 SELECT p.id, m.id, 50, 7.99, 'BATCH002', '2025-12-31'
-FROM pharmacies p, medications m 
+FROM pharmacies p, medications m
 WHERE p.id = (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com')
 AND m.name = 'Ibuprofen';
 
 -- Sample Medication Inquiries
 INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
-SELECT 
+SELECT
     'Paracetamol',
     'I need information about the proper dosage for my child who is 8 years old.',
     'PENDING',
@@ -80,7 +85,7 @@ SELECT
     (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
 
 INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
-SELECT 
+SELECT
     'Ibuprofen',
     'Can this be taken together with paracetamol?',
     'PENDING',
@@ -90,7 +95,7 @@ SELECT
     (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
 
 INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
-SELECT 
+SELECT
     'Amoxicillin',
     'Do you have this antibiotic in stock?',
     'RESPONDED',
@@ -100,7 +105,7 @@ SELECT
     (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
 
 INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
-SELECT 
+SELECT
     'Omeprazole',
     'What is the recommended duration for taking this medication?',
     'RESPONDED',
@@ -110,7 +115,7 @@ SELECT
     (SELECT id FROM users WHERE email = 'tour.eiffel@pharma.com');
 
 INSERT INTO medication_inquiries (medication_name, patient_note, status, created_at, updated_at, user_id, responding_pharmacy_id)
-SELECT 
+SELECT
     'Loratadine',
     'Is this safe to take during pregnancy?',
     'RESPONDED',
@@ -121,7 +126,7 @@ SELECT
 
 -- Sample Inquiry Messages
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'Hello, I need help with this medication.',
     CURRENT_TIMESTAMP,
     i.id,
@@ -132,7 +137,7 @@ WHERE u.email = 'test@example.com'
 AND i.medication_name = 'Paracetamol';
 
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'Please let me know if you have any questions.',
     CURRENT_TIMESTAMP,
     i.id,
@@ -143,7 +148,7 @@ WHERE u.email = 'tour.eiffel@pharma.com'
 AND i.medication_name = 'Paracetamol';
 
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'Can you provide more information about the dosage?',
     CURRENT_TIMESTAMP,
     i.id,
@@ -154,7 +159,7 @@ WHERE u.email = 'test@example.com'
 AND i.medication_name = 'Ibuprofen';
 
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'Yes, we have it in stock.',
     CURRENT_TIMESTAMP,
     i.id,
@@ -165,7 +170,7 @@ WHERE u.email = 'tour.eiffel@pharma.com'
 AND i.medication_name = 'Amoxicillin';
 
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'How long should I take this medication?',
     CURRENT_TIMESTAMP,
     i.id,
@@ -176,7 +181,7 @@ WHERE u.email = 'test@example.com'
 AND i.medication_name = 'Omeprazole';
 
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'You should take it for 2 weeks.',
     CURRENT_TIMESTAMP,
     i.id,
@@ -187,7 +192,7 @@ WHERE u.email = 'tour.eiffel@pharma.com'
 AND i.medication_name = 'Omeprazole';
 
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'Is this medication safe during pregnancy?',
     CURRENT_TIMESTAMP,
     i.id,
@@ -198,7 +203,7 @@ WHERE u.email = 'test@example.com'
 AND i.medication_name = 'Loratadine';
 
 INSERT INTO inquiry_messages (content, created_at, inquiry_id, sender_id)
-SELECT 
+SELECT
     'Yes, it is safe.',
     CURRENT_TIMESTAMP,
     i.id,

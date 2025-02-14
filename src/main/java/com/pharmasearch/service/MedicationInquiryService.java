@@ -6,6 +6,7 @@ import com.pharmasearch.model.MedicationInquiry;
 import com.pharmasearch.model.User;
 import com.pharmasearch.repository.InquiryMessageRepository;
 import com.pharmasearch.repository.MedicationInquiryRepository;
+import com.pharmasearch.service.FirebaseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +19,12 @@ public class MedicationInquiryService {
     private final MedicationInquiryRepository inquiryRepository;
     private final InquiryMessageRepository messageRepository;
     private final UserService userService;
+    private final FirebaseService firebaseService;
 
     @Transactional
     public MedicationInquiry createInquiry(String medicationName, String patientNote) {
         User currentUser = userService.getCurrentUser();
-        
+
         MedicationInquiry inquiry = MedicationInquiry.builder()
                 .medicationName(medicationName)
                 .patientNote(patientNote)
@@ -30,7 +32,18 @@ public class MedicationInquiryService {
                 .user(currentUser)
                 .build();
 
-        return inquiryRepository.save(inquiry);
+        MedicationInquiry savedInquiry = inquiryRepository.save(inquiry);
+
+        // Send notifications to all pharmacists
+        List<Long> pharmacistIds = userService.getAllPharmacistIds();
+        firebaseService.sendMedicationSearchNotification(
+            pharmacistIds,
+            medicationName,
+            0.0, // Since this is a general inquiry, we don't have specific coordinates
+            0.0
+        );
+
+        return savedInquiry;
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +85,7 @@ public class MedicationInquiryService {
 
         // Verify the user has access to this inquiry
         if ("PHARMACIST".equals(currentUser.getRole())) {
-            if (inquiry.getRespondingPharmacy() != null && 
+            if (inquiry.getRespondingPharmacy() != null &&
                 !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
                 throw new RuntimeException("You don't have access to this inquiry");
             }
@@ -119,7 +132,7 @@ public class MedicationInquiryService {
             throw new RuntimeException("Only pharmacists can close inquiries");
         }
 
-        if (inquiry.getRespondingPharmacy() == null || 
+        if (inquiry.getRespondingPharmacy() == null ||
             !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
             throw new RuntimeException("You don't have permission to close this inquiry");
         }

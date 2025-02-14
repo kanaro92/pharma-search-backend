@@ -6,12 +6,14 @@ import com.pharmasearch.model.Pharmacy;
 import com.pharmasearch.model.User;
 import com.pharmasearch.repository.MedicationRequestRepository;
 import com.pharmasearch.repository.PharmacyRepository;
+import com.pharmasearch.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,8 @@ import java.util.List;
 public class MedicationRequestService {
     private final MedicationRequestRepository requestRepository;
     private final PharmacyRepository pharmacyRepository;
+    private final FirebaseService firebaseService;
+    private final UserService userService;
 
     @Transactional
     public MedicationRequest createRequest(MedicationRequestDTO requestDTO, User user) {
@@ -48,9 +52,19 @@ public class MedicationRequestService {
             request.setUser(user);
             request.setPharmacy(pharmacy);
             request.setStatus("PENDING");
-            
+
             MedicationRequest savedRequest = requestRepository.save(request);
             log.info("Successfully created medication request with ID: {}", savedRequest.getId());
+
+            // Envoyer une notification à tous les pharmaciens
+            List<Long> pharmacistIds = userService.getAllPharmacistIds();
+            firebaseService.sendMedicationSearchNotification(
+                pharmacistIds,
+                request.getMedicationName(),
+                pharmacy.getLatitude(),
+                pharmacy.getLongitude()
+            );
+
             return savedRequest;
         } catch (Exception e) {
             log.error("Failed to create medication request", e);

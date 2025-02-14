@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             SELECT COUNT(*) > 0 FROM users WHERE email = :email
             """, nativeQuery = true)
     boolean existsByEmail(@Param("email") String email);
+
+    @Query("SELECT u FROM User u WHERE u.role = :role")
+    List<User> findAllByRole(@Param("role") String role);
 }

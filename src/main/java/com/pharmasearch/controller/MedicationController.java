@@ -17,8 +17,10 @@ public class MedicationController {
 
     @GetMapping("/search")
     public ResponseEntity<List<Medication>> searchMedications(
-            @RequestParam String query) {
-        return ResponseEntity.ok(medicationService.searchMedications(query));
+            @RequestParam String query,
+            @RequestParam(required = false, defaultValue = "0.0") double latitude,
+            @RequestParam(required = false, defaultValue = "0.0") double longitude) {
+        return ResponseEntity.ok(medicationService.searchMedications(query, latitude, longitude));
     }
 
     @GetMapping("/{id}/available-stocks")

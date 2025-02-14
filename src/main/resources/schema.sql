@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS medication_requests CASCADE;
 DROP TABLE IF EXISTS medication_inquiries CASCADE;
 DROP TABLE IF EXISTS medications CASCADE;
 DROP TABLE IF EXISTS pharmacies CASCADE;
+DROP TABLE IF EXISTS fcm_tokens CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP SEQUENCE IF EXISTS user_id_seq;
 
@@ -104,4 +105,15 @@ CREATE TABLE request_messages (
     sender_id BIGINT NOT NULL,
     FOREIGN KEY (request_id) REFERENCES medication_requests(id),
     FOREIGN KEY (sender_id) REFERENCES users(id)
+);
+
+-- Create FCM tokens table
+CREATE TABLE fcm_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    token VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uk_fcm_token UNIQUE (token)
 );
