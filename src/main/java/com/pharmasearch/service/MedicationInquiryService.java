@@ -34,14 +34,22 @@ public class MedicationInquiryService {
 
         MedicationInquiry savedInquiry = inquiryRepository.save(inquiry);
 
-        // Send notifications to all pharmacists
-        List<Long> pharmacistIds = userService.getAllPharmacistIds();
-        firebaseService.sendMedicationSearchNotification(
-            pharmacistIds,
-            medicationName,
-            0.0, // Since this is a general inquiry, we don't have specific coordinates
-            0.0
-        );
+        // Send notifications to all pharmacists individually
+        List<User> pharmacists = userService.getAllPharmacists();
+        for (User pharmacist : pharmacists) {
+            try {
+                firebaseService.sendMedicationSearchNotification(
+                        pharmacist.getId(),
+                        savedInquiry.getId(),
+                        medicationName,
+                        patientNote,
+                        currentUser
+                );
+            } catch (Exception e) {
+                // Log error but continue with other pharmacists
+                System.err.println("Failed to send notification to pharmacist " + pharmacist.getId() + ": " + e.getMessage());
+            }
+        }
 
         return savedInquiry;
     }
@@ -58,7 +66,7 @@ public class MedicationInquiryService {
         if ("PHARMACIST".equals(currentUser.getRole())) {
             // Pharmacists see both new inquiries and ones they're already responding to
             return inquiryRepository.findByStatusNotAndRespondingPharmacyIsNullOrRespondingPharmacy(
-                InquiryStatus.CLOSED, currentUser);
+                    InquiryStatus.CLOSED, currentUser);
         } else {
             // Regular users only see their own inquiries that aren't closed
             return inquiryRepository.findByUserAndStatusNotOrderByCreatedAtDesc(currentUser, InquiryStatus.CLOSED);
@@ -86,7 +94,7 @@ public class MedicationInquiryService {
         // Verify the user has access to this inquiry
         if ("PHARMACIST".equals(currentUser.getRole())) {
             if (inquiry.getRespondingPharmacy() != null &&
-                !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
+                    !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
                 throw new RuntimeException("You don't have access to this inquiry");
             }
         } else if (!inquiry.getUser().getId().equals(currentUser.getId())) {
@@ -133,7 +141,7 @@ public class MedicationInquiryService {
         }
 
         if (inquiry.getRespondingPharmacy() == null ||
-            !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
+                !inquiry.getRespondingPharmacy().getId().equals(currentUser.getId())) {
             throw new RuntimeException("You don't have permission to close this inquiry");
         }
 

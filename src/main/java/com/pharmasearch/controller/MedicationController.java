@@ -2,7 +2,9 @@ package com.pharmasearch.controller;
 
 import com.pharmasearch.model.Medication;
 import com.pharmasearch.model.MedicationStock;
+import com.pharmasearch.model.User;
 import com.pharmasearch.service.MedicationService;
+import com.pharmasearch.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,14 +16,23 @@ import java.util.List;
 @CrossOrigin("*")
 public class MedicationController {
     private final MedicationService medicationService;
+    private final UserService userService;
 
+    /*
     @GetMapping("/search")
     public ResponseEntity<List<Medication>> searchMedications(
             @RequestParam String query,
             @RequestParam(required = false, defaultValue = "0.0") double latitude,
             @RequestParam(required = false, defaultValue = "0.0") double longitude) {
-        return ResponseEntity.ok(medicationService.searchMedications(query, latitude, longitude));
-    }
+
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        List<Medication> medications = medicationService.searchMedications(query, latitude, longitude, currentUser);
+        return ResponseEntity.ok(medications);
+    }*/
 
     @GetMapping("/{id}/available-stocks")
     public ResponseEntity<List<MedicationStock>> findAvailableStocks(

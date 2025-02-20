@@ -16,6 +16,8 @@ public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
 
     List<FcmToken> findByUserAndIsActiveTrue(User user);
 
+    Optional<FcmToken> findTopByUserAndIsActiveTrueOrderByLastUsedAtDesc(User user);
+
     @Modifying
     @Query("UPDATE FcmToken f SET f.isActive = false WHERE f.user = :user AND f.token = :token")
     void deactivateToken(User user, String token);

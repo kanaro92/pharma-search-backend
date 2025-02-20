@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -29,7 +28,7 @@ public class FirebaseService {
         log.debug("Registering FCM token for user {}: {}", userId, token);
 
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         // First deactivate all tokens for this user that are different from the new token
         tokenRepository.deactivateAllTokensExceptThis(user.getId(), token);
@@ -72,92 +71,142 @@ public class FirebaseService {
     public void sendMessageNotification(Long userId, String senderName, String messageContent) {
         log.debug("Sending message notification to user {}", userId);
 
-        List<FcmToken> userTokens = tokenRepository.findByUserAndIsActiveTrue(
-            userRepository.getReferenceById(userId)
-        );
+        // Get only the most recently used token
+        FcmToken userToken = tokenRepository.findTopByUserAndIsActiveTrueOrderByLastUsedAtDesc(
+                userRepository.getReferenceById(userId)
+        ).orElse(null);
 
-        if (userTokens.isEmpty()) {
-            log.warn("No active FCM tokens found for user {}", userId);
+        if (userToken == null) {
+            log.warn("No active FCM token found for user {}", userId);
             return;
         }
 
-        Notification notification = Notification.builder()
-            .setTitle("New message from " + senderName)
-            .setBody(messageContent)
-            .build();
+        try {
+            Notification notification = Notification.builder()
+                    .setTitle("New message from " + senderName)
+                    .setBody(messageContent)
+                    .build();
 
-        for (FcmToken fcmToken : userTokens) {
-            try {
-                Message message = Message.builder()
-                    .setToken(fcmToken.getToken())
+            Message message = Message.builder()
+                    .setToken(userToken.getToken())
                     .setNotification(notification)
                     .putData("type", "message")
                     .build();
 
-                firebaseMessaging.send(message);
-                fcmToken.setLastUsedAt(LocalDateTime.now());
-                tokenRepository.save(fcmToken);
+            firebaseMessaging.send(message);
+            userToken.setLastUsedAt(LocalDateTime.now());
+            tokenRepository.save(userToken);
 
-                log.debug("Notification sent successfully to token {}", fcmToken.getToken());
-            } catch (Exception e) {
-                log.error("Failed to send notification to token {}: {}", fcmToken.getToken(), e.getMessage());
-                if (isInvalidTokenError(e)) {
-                    tokenRepository.deactivateToken(fcmToken.getUser(), fcmToken.getToken());
-                }
+            log.debug("Notification sent successfully to token {}", userToken.getToken());
+        } catch (Exception e) {
+            log.error("Error sending notification to token {}: {}", userToken.getToken(), e.getMessage());
+            if (e.getMessage().contains("registration-token-not-registered")) {
+                log.info("Token is invalid, deactivating: {}", userToken.getToken());
+                userToken.setActive(false);
+                tokenRepository.save(userToken);
             }
         }
     }
 
     @Transactional
-    public void sendMedicationSearchNotification(List<Long> pharmacistIds, String medicationName, double latitude, double longitude) {
-        log.debug("Sending medication search notification to {} pharmacists", pharmacistIds.size());
+    public void sendMedicationSearchNotification(Long pharmacistId, Long medicationInquiryId, String medicationName, String patientNote, User patient) {
+        log.debug("Sending medication search notification to pharmacist {}", pharmacistId);
 
-        for (Long pharmacistId : pharmacistIds) {
-            List<FcmToken> pharmacistTokens = tokenRepository.findByUserAndIsActiveTrue(
+        // Get only the most recently used token
+        FcmToken userToken = tokenRepository.findTopByUserAndIsActiveTrueOrderByLastUsedAtDesc(
                 userRepository.getReferenceById(pharmacistId)
-            );
+        ).orElse(null);
 
-            if (pharmacistTokens.isEmpty()) {
-                log.warn("No active FCM tokens found for pharmacist {}", pharmacistId);
-                continue;
+        if (userToken == null) {
+            log.warn("No active FCM token found for pharmacist {}", pharmacistId);
+            return;
+        }
+
+        try {
+            Notification notification = Notification.builder()
+                    .setTitle("Nouvelle demande de médicament")
+                    .setBody("Un patient recherche " + medicationName)
+                    .build();
+
+            Message message = Message.builder()
+                    .setToken(userToken.getToken())
+                    .setNotification(notification)
+                    .putData("type", "medication_search")
+                    .putData("medication_name", medicationName)
+                    .putData("patient_note", patientNote)
+                    .putData("user_id", patient.getId().toString())
+                    .putData("user_name", patient.getName())
+                    .putData("notification_type", "notification")
+                    .putData("request_id", medicationInquiryId.toString()) // Empty string for backward compatibility
+                    .putData("pharmacy_id", "") // Empty string for backward compatibility
+                    .putData("latitude", "0.0") // Default value for backward compatibility
+                    .putData("longitude", "0.0") // Default value for backward compatibility
+                    .build();
+
+            String result = firebaseMessaging.send(message);
+            userToken.setLastUsedAt(LocalDateTime.now());
+            tokenRepository.save(userToken);
+
+            log.debug("Medication search notification sent successfully to token {} with result: {}",
+                    userToken.getToken(), result);
+        } catch (Exception e) {
+            log.error("Error sending medication search notification to pharmacist {}: {}", pharmacistId, e.getMessage());
+            log.warn("Failed to send notification to pharmacist {}", pharmacistId);
+        }
+    }
+
+    @Transactional
+    public void sendMedicationRequestNotification(Long userId, String medicationName, String userName, Map<String, String> data) {
+        log.debug("Sending medication request notification to user {}", userId);
+
+        // Get only the most recently used token
+        FcmToken userToken = tokenRepository.findTopByUserAndIsActiveTrueOrderByLastUsedAtDesc(
+                userRepository.getReferenceById(userId)
+        ).orElse(null);
+
+        if (userToken == null) {
+            log.warn("No active FCM token found for user {}", userId);
+            return;
+        }
+
+        try {
+            Notification notification = Notification.builder()
+                    .setTitle("Nouvelle demande de médicament")
+                    .setBody("Un patient recherche " + medicationName)
+                    .build();
+
+            Message.Builder messageBuilder = Message.builder()
+                    .setToken(userToken.getToken())
+                    .setNotification(notification)
+                    .putData("type", "medication_search")
+                    .putData("medication", medicationName)
+                    .putData("userName", userName);
+
+            // Add any additional data
+            if (data != null) {
+                data.forEach(messageBuilder::putData);
             }
 
-            Notification notification = Notification.builder()
-                .setTitle("Nouvelle demande de médicament")
-                .setBody("Un patient recherche " + medicationName)
-                .build();
+            firebaseMessaging.send(messageBuilder.build());
+            userToken.setLastUsedAt(LocalDateTime.now());
+            tokenRepository.save(userToken);
 
-            for (FcmToken fcmToken : pharmacistTokens) {
-                try {
-                    Message message = Message.builder()
-                        .setToken(fcmToken.getToken())
-                        .setNotification(notification)
-                        .putData("type", "medication_search")
-                        .putData("medication", medicationName)
-                        .putData("latitude", String.valueOf(latitude))
-                        .putData("longitude", String.valueOf(longitude))
-                        .build();
-
-                    firebaseMessaging.send(message);
-                    fcmToken.setLastUsedAt(LocalDateTime.now());
-                    tokenRepository.save(fcmToken);
-
-                    log.debug("Notification sent successfully to pharmacist {}", pharmacistId);
-                } catch (Exception e) {
-                    log.error("Failed to send notification to pharmacist {}: {}", pharmacistId, e.getMessage());
-                    if (isInvalidTokenError(e)) {
-                        tokenRepository.deactivateToken(fcmToken.getUser(), fcmToken.getToken());
-                    }
-                }
+            log.debug("Medication request notification sent successfully to token {}", userToken.getToken());
+        } catch (Exception e) {
+            log.error("Error sending notification to token {}: {}", userToken.getToken(), e.getMessage());
+            if (e.getMessage().contains("registration-token-not-registered")) {
+                log.info("Token is invalid, deactivating: {}", userToken.getToken());
+                userToken.setActive(false);
+                tokenRepository.save(userToken);
             }
         }
     }
 
     private boolean isInvalidTokenError(Exception e) {
         return e.getMessage() != null && (
-            e.getMessage().contains("InvalidRegistration") ||
-            e.getMessage().contains("NotRegistered") ||
-            e.getMessage().contains("InvalidApnsCredential")
+                e.getMessage().contains("InvalidRegistration") ||
+                        e.getMessage().contains("NotRegistered") ||
+                        e.getMessage().contains("InvalidApnsCredential")
         );
     }
 }

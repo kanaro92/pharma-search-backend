@@ -6,14 +6,12 @@ import com.pharmasearch.model.Pharmacy;
 import com.pharmasearch.model.User;
 import com.pharmasearch.repository.MedicationRequestRepository;
 import com.pharmasearch.repository.PharmacyRepository;
-import com.pharmasearch.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -40,10 +38,10 @@ public class MedicationRequestService {
 
         try {
             Pharmacy pharmacy = pharmacyRepository.findById(requestDTO.getPharmacyId())
-                .orElseThrow(() -> {
-                    log.error("Pharmacy not found with ID: {}", requestDTO.getPharmacyId());
-                    return new IllegalArgumentException("Pharmacy not found");
-                });
+                    .orElseThrow(() -> {
+                        log.error("Pharmacy not found with ID: {}", requestDTO.getPharmacyId());
+                        return new IllegalArgumentException("Pharmacy not found");
+                    });
 
             MedicationRequest request = new MedicationRequest();
             request.setMedicationName(requestDTO.getMedicationName().trim());
@@ -56,14 +54,22 @@ public class MedicationRequestService {
             MedicationRequest savedRequest = requestRepository.save(request);
             log.info("Successfully created medication request with ID: {}", savedRequest.getId());
 
-            // Envoyer une notification à tous les pharmaciens
-            List<Long> pharmacistIds = userService.getAllPharmacistIds();
-            firebaseService.sendMedicationSearchNotification(
-                pharmacistIds,
-                request.getMedicationName(),
-                pharmacy.getLatitude(),
-                pharmacy.getLongitude()
-            );
+            // Send notification to each pharmacist individually
+            List<User> pharmacists = userService.getAllPharmacists();
+            for (User pharmacist : pharmacists) {
+                try {
+                    firebaseService.sendMedicationSearchNotification(
+                            pharmacist.getId(),
+                            request.getId(),
+                            request.getMedicationName(),
+                            request.getNote(),
+                            user  // This is the patient who made the request
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to send notification to pharmacist {}: {}", pharmacist.getId(), e.getMessage());
+                    // Continue with other pharmacists even if one fails
+                }
+            }
 
             return savedRequest;
         } catch (Exception e) {

@@ -5,9 +5,9 @@ import com.pharmasearch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public User getCurrentUser() {
@@ -46,5 +45,10 @@ public class UserService {
                 .stream()
                 .map(User::getId)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getAllPharmacists() {
+        return userRepository.findAllByRole("PHARMACIST");
     }
 }

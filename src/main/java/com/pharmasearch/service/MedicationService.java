@@ -6,7 +6,6 @@ import com.pharmasearch.model.User;
 import com.pharmasearch.repository.MedicationRepository;
 import com.pharmasearch.repository.MedicationStockRepository;
 import com.pharmasearch.repository.UserRepository;
-import com.pharmasearch.constants.UserRoles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -18,28 +17,30 @@ public class MedicationService {
     private final MedicationStockRepository stockRepository;
     private final UserRepository userRepository;
     private final FirebaseService firebaseService;
-
-    public List<Medication> searchMedications(String query, double latitude, double longitude) {
+    private final UserService userService;
+/*
+    public List<Medication> searchMedications(String query, double latitude, double longitude, User currentUser) {
         List<Medication> medications = medicationRepository.searchMedications(query);
 
-        if (!medications.isEmpty()) {
-            // Récupérer tous les pharmaciens
-            List<Long> pharmacistIds = userRepository.findAllByRole(UserRoles.PHARMACIST)
-                .stream()
-                .map(User::getId)
-                .toList();
-
-            // Envoyer une notification à tous les pharmaciens
-            firebaseService.sendMedicationSearchNotification(
-                pharmacistIds,
-                query,
-                latitude,
-                longitude
-            );
+        if (!medications.isEmpty() && currentUser != null) {
+            // Send notification to each pharmacist individually
+            List<User> pharmacists = userService.getAllPharmacists();
+            for (User pharmacist : pharmacists) {
+                try {
+                    firebaseService.sendMedicationSearchNotification(
+                        pharmacist.getId(),
+                            savedInquiry.getId(), query,
+                        currentUser // Pass the authenticated user who made the search
+                    );
+                } catch (Exception e) {
+                    // Log error but continue with other pharmacists
+                    System.err.println("Failed to send notification to pharmacist " + pharmacist.getId() + ": " + e.getMessage());
+                }
+            }
         }
 
         return medications;
-    }
+    }*/
 
     public List<MedicationStock> findAvailableStocksNearby(
             Long medicationId, double latitude, double longitude, double radiusInKm) {
