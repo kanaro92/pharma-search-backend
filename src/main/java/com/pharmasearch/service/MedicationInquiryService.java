@@ -139,70 +139,13 @@ public class MedicationInquiryService {
             }
         }
 
-        return messageRepository.findByInquiryOrderByCreatedAtAsc(inquiry);
-    }
-
-    @Transactional
-    public InquiryMessage sendMessage(Long inquiryId, Long pharmacyId, String content) {
-        User currentUser = userService.getCurrentUser();
-        MedicationInquiry inquiry = getInquiryById(inquiryId);
-
-        // Check if the current user is either the inquiry owner or the pharmacy
-        boolean isOwner = inquiry.getUser().getEmail().equals(currentUser.getEmail());
-        boolean isPharmacy = pharmacyId.equals(currentUser.getId()) && 
-                           "PHARMACIST".equals(currentUser.getRole());
-
-        if (!isOwner && !isPharmacy) {
-            throw new RuntimeException("User does not have permission to send messages in this conversation");
-        }
-
-        // For pharmacists, ensure they are part of the conversation
-        if ("PHARMACIST".equals(currentUser.getRole())) {
-            // If they're not part of the conversation, try to add them
-            if (!inquiry.getRespondingPharmacies().contains(currentUser)) {
-                // Only allow joining if the inquiry is not closed
-                if (!InquiryStatus.CLOSED.equals(inquiry.getStatus())) {
-                    inquiry.getRespondingPharmacies().add(currentUser);
-                    if (InquiryStatus.PENDING.equals(inquiry.getStatus())) {
-                        inquiry.setStatus(InquiryStatus.RESPONDED);
-                    }
-                    inquiryRepository.save(inquiry);
-                } else {
-                    throw new RuntimeException("Cannot join a closed inquiry");
-                }
-            }
-        }
-
-        InquiryMessage message = new InquiryMessage();
-        message.setInquiry(inquiry);
-        message.setContent(content);
-        message.setSender(currentUser);
-        message.setCreatedAt(LocalDateTime.now());
-
-        return messageRepository.save(message);
-    }
-
-    @Transactional(readOnly = true)
-    public List<MedicationInquiry> getInquiriesForCurrentUser() {
-        User currentUser = userService.getCurrentUser();
-        if ("PHARMACIST".equals(currentUser.getRole())) {
-            // Pharmacists see inquiries they've responded to
-            return inquiryRepository.findByRespondingPharmaciesContainingOrderByCreatedAtDesc(currentUser);
+        // If user is owner, get all messages for this inquiry
+        if (isOwner) {
+            return messageRepository.findByInquiryOrderByCreatedAtAsc(inquiry);
         } else {
-            // Regular users see their own inquiries
-            return inquiryRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+            // If pharmacist, only get messages between them and the user
+            return messageRepository.findByInquiryIdAndPharmacyIdOrderByCreatedAtAsc(inquiryId, pharmacyId);
         }
-    }
-
-    @Transactional(readOnly = true)
-    public List<MedicationInquiry> getPharmacistInquiries() {
-        User currentUser = userService.getCurrentUser();
-        if (!"PHARMACIST".equals(currentUser.getRole())) {
-            throw new RuntimeException("Only pharmacists can access this endpoint");
-        }
-        // Get both inquiries the pharmacist is responding to and pending inquiries
-        return inquiryRepository.findByStatusNotAndRespondingPharmaciesEmptyOrContaining(
-                InquiryStatus.CLOSED, currentUser);
     }
 
     @Transactional(readOnly = true)
@@ -253,6 +196,69 @@ public class MedicationInquiryService {
                 .sender(currentUser)
                 .inquiry(inquiry)
                 .build();
+
+        return messageRepository.save(message);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicationInquiry> getInquiriesForCurrentUser() {
+        User currentUser = userService.getCurrentUser();
+        if ("PHARMACIST".equals(currentUser.getRole())) {
+            // Pharmacists see inquiries they've responded to
+            return inquiryRepository.findByRespondingPharmaciesContainingOrderByCreatedAtDesc(currentUser);
+        } else {
+            // Regular users see their own inquiries
+            return inquiryRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicationInquiry> getPharmacistInquiries() {
+        User currentUser = userService.getCurrentUser();
+        if (!"PHARMACIST".equals(currentUser.getRole())) {
+            throw new RuntimeException("Only pharmacists can access this endpoint");
+        }
+        
+        // Get all non-closed inquiries, regardless of who has responded
+        return inquiryRepository.findByStatusNotOrderByCreatedAtDesc(InquiryStatus.CLOSED);
+    }
+
+    @Transactional
+    public InquiryMessage sendMessage(Long inquiryId, Long pharmacyId, String content) {
+        User currentUser = userService.getCurrentUser();
+        MedicationInquiry inquiry = getInquiryById(inquiryId);
+
+        // Check if the current user is either the inquiry owner or the pharmacy
+        boolean isOwner = inquiry.getUser().getEmail().equals(currentUser.getEmail());
+        boolean isPharmacy = pharmacyId.equals(currentUser.getId()) && 
+                           "PHARMACIST".equals(currentUser.getRole());
+
+        if (!isOwner && !isPharmacy) {
+            throw new RuntimeException("User does not have permission to send messages in this conversation");
+        }
+
+        // For pharmacists, ensure they are part of the conversation
+        if ("PHARMACIST".equals(currentUser.getRole())) {
+            // If they're not part of the conversation, try to add them
+            if (!inquiry.getRespondingPharmacies().contains(currentUser)) {
+                // Only allow joining if the inquiry is not closed
+                if (!InquiryStatus.CLOSED.equals(inquiry.getStatus())) {
+                    inquiry.getRespondingPharmacies().add(currentUser);
+                    if (InquiryStatus.PENDING.equals(inquiry.getStatus())) {
+                        inquiry.setStatus(InquiryStatus.RESPONDED);
+                    }
+                    inquiryRepository.save(inquiry);
+                } else {
+                    throw new RuntimeException("Cannot join a closed inquiry");
+                }
+            }
+        }
+
+        InquiryMessage message = new InquiryMessage();
+        message.setInquiry(inquiry);
+        message.setContent(content);
+        message.setSender(currentUser);
+        message.setCreatedAt(LocalDateTime.now());
 
         return messageRepository.save(message);
     }

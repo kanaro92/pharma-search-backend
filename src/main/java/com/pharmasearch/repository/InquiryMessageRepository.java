@@ -18,12 +18,17 @@ public interface InquiryMessageRepository extends JpaRepository<InquiryMessage, 
 
     @Query("SELECT m FROM InquiryMessage m WHERE m.inquiry.id = :inquiryId AND m.sender.id = :pharmacyId " +
            "ORDER BY m.createdAt DESC")
-    Optional<InquiryMessage> findLatestMessage(@Param("inquiryId") Long inquiryId, @Param("pharmacyId") Long pharmacyId);
+    List<InquiryMessage> findLatestMessages(@Param("inquiryId") Long inquiryId, @Param("pharmacyId") Long pharmacyId);
+
+    default Optional<InquiryMessage> findLatestMessage(Long inquiryId, Long pharmacyId) {
+        return findLatestMessages(inquiryId, pharmacyId).stream().findFirst();
+    }
 
     @Query("SELECT m FROM InquiryMessage m " +
            "JOIN m.inquiry i " +
-           "JOIN i.respondingPharmacies p " +
-           "WHERE i.id = :inquiryId AND p.id = :pharmacyId " +
+           "WHERE i.id = :inquiryId AND " +
+           "(m.sender.id = :pharmacyId OR " +  
+           "(m.sender.id = i.user.id AND :pharmacyId IN (SELECT rp.id FROM i.respondingPharmacies rp))) " + 
            "ORDER BY m.createdAt ASC")
     List<InquiryMessage> findByInquiryIdAndPharmacyIdOrderByCreatedAtAsc(@Param("inquiryId") Long inquiryId, 
                                                                          @Param("pharmacyId") Long pharmacyId);

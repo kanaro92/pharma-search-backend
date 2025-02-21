@@ -33,6 +33,8 @@ public interface MedicationInquiryRepository extends JpaRepository<MedicationInq
     List<MedicationInquiry> findByStatusNotAndRespondingPharmaciesEmptyOrContaining(
         @Param("status") String status, @Param("pharmacy") User pharmacy);
 
+    List<MedicationInquiry> findByStatusNotOrderByCreatedAtDesc(String status);
+
     // Methods for pharmacy statistics
     @Query("SELECT COUNT(DISTINCT i) FROM MedicationInquiry i JOIN i.respondingPharmacies p WHERE p = :pharmacy")
     Long countByPharmacy(@Param("pharmacy") Pharmacy pharmacy);
