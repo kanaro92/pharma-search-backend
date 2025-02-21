@@ -45,8 +45,15 @@ public class SecurityConfig {
                         // Pharmacist endpoints
                         .requestMatchers("/api/pharmacy/**").hasRole("PHARMACIST")
                         .requestMatchers("/api/inquiries/pharmacist/**").hasRole("PHARMACIST")
+                        .requestMatchers("/api/medication-inquiries/pharmacist/**").hasRole("PHARMACIST")
+                        .requestMatchers("/api/medication-inquiries/pending/**").hasRole("PHARMACIST")
+                        .requestMatchers("/api/medication-inquiries/*/respond/**").hasRole("PHARMACIST")
+                        .requestMatchers("/api/medication-inquiries/*/close/**").hasRole("PHARMACIST")
                         // Common endpoints
-                        .requestMatchers("/api/inquiries/messages/**").authenticated()
+                        .requestMatchers("/api/inquiries/*/conversations/**").authenticated()
+                        .requestMatchers("/api/inquiries/*/messages/**").authenticated()
+                        .requestMatchers("/api/medication-inquiries/*/messages/**").authenticated()
+                        .requestMatchers("/api/medication-inquiries/my/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

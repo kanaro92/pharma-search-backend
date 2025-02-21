@@ -2,10 +2,29 @@ package com.pharmasearch.repository;
 
 import com.pharmasearch.model.InquiryMessage;
 import com.pharmasearch.model.MedicationInquiry;
+import com.pharmasearch.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.List;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
+@Repository
 public interface InquiryMessageRepository extends JpaRepository<InquiryMessage, Long> {
     List<InquiryMessage> findByInquiryOrderByCreatedAtAsc(MedicationInquiry inquiry);
     long countByInquiry(MedicationInquiry inquiry);
+
+    @Query("SELECT m FROM InquiryMessage m WHERE m.inquiry.id = :inquiryId AND m.sender.id = :pharmacyId " +
+           "ORDER BY m.createdAt DESC")
+    Optional<InquiryMessage> findLatestMessage(@Param("inquiryId") Long inquiryId, @Param("pharmacyId") Long pharmacyId);
+
+    @Query("SELECT m FROM InquiryMessage m " +
+           "JOIN m.inquiry i " +
+           "JOIN i.respondingPharmacies p " +
+           "WHERE i.id = :inquiryId AND p.id = :pharmacyId " +
+           "ORDER BY m.createdAt ASC")
+    List<InquiryMessage> findByInquiryIdAndPharmacyIdOrderByCreatedAtAsc(@Param("inquiryId") Long inquiryId, 
+                                                                         @Param("pharmacyId") Long pharmacyId);
 }
