@@ -93,7 +93,7 @@ public class MedicationInquiryService {
 
         // For pharmacists, allow viewing messages if the inquiry is not closed
         if ("PHARMACIST".equals(currentUser.getRole())) {
-            if (inquiry.getStatus().equals(InquiryStatus.CLOSED) && 
+            if (inquiry.getStatus().equals(InquiryStatus.CLOSED) &&
                 !inquiry.getRespondingPharmacies().contains(currentUser)) {
                 throw new RuntimeException("You don't have access to this closed inquiry");
             }
@@ -147,5 +147,68 @@ public class MedicationInquiryService {
 
         inquiry.setStatus(InquiryStatus.CLOSED);
         inquiryRepository.save(inquiry);
+    }
+
+    @Transactional
+    public MedicationInquiry addRespondingPharmacy(Long inquiryId) {
+        User currentUser = userService.getCurrentUser();
+        MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
+                .orElseThrow(() -> new RuntimeException("Inquiry not found"));
+
+        if (!currentUser.getRole().equals("PHARMACIST")) {
+            throw new RuntimeException("Only pharmacists can respond to inquiries");
+        }
+
+        if (inquiry.getStatus().equals(InquiryStatus.CLOSED)) {
+            throw new RuntimeException("Cannot respond to a closed inquiry");
+        }
+
+        if (!inquiry.getRespondingPharmacies().contains(currentUser)) {
+            inquiry.getRespondingPharmacies().add(currentUser);
+            if (inquiry.getStatus().equals(InquiryStatus.PENDING)) {
+                inquiry.setStatus(InquiryStatus.RESPONDED);
+            }
+            return inquiryRepository.save(inquiry);
+        }
+
+        return inquiry;
+    }
+
+    @Transactional
+    public MedicationInquiry removeRespondingPharmacy(Long inquiryId) {
+        User currentUser = userService.getCurrentUser();
+        MedicationInquiry inquiry = inquiryRepository.findById(inquiryId)
+                .orElseThrow(() -> new RuntimeException("Inquiry not found"));
+
+        if (!currentUser.getRole().equals("PHARMACIST")) {
+            throw new RuntimeException("Only pharmacists can withdraw from inquiries");
+        }
+
+        if (inquiry.getStatus().equals(InquiryStatus.CLOSED)) {
+            throw new RuntimeException("Cannot withdraw from a closed inquiry");
+        }
+
+        if (inquiry.getRespondingPharmacies().contains(currentUser)) {
+            inquiry.getRespondingPharmacies().remove(currentUser);
+            // If this was the last responding pharmacy and there are no messages, set status back to pending
+            if (inquiry.getRespondingPharmacies().isEmpty() && messageRepository
+                    .countByInquiry(inquiry) == 0) {
+                inquiry.setStatus(InquiryStatus.PENDING);
+            }
+            return inquiryRepository.save(inquiry);
+        }
+
+        return inquiry;
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicationInquiry> getPharmacistInquiries() {
+        User currentUser = userService.getCurrentUser();
+        if (!currentUser.getRole().equals("PHARMACIST")) {
+            throw new RuntimeException("Only pharmacists can access this endpoint");
+        }
+        // Get both inquiries the pharmacist is responding to and pending inquiries
+        return inquiryRepository.findByStatusNotAndRespondingPharmaciesEmptyOrContaining(
+                InquiryStatus.CLOSED, currentUser);
     }
 }

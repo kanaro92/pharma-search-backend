@@ -52,7 +52,7 @@ public class MedicationInquiryController {
     @GetMapping("/pharmacist/inquiries")
     @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<List<MedicationInquiry>> getPharmacistInquiries() {
-        List<MedicationInquiry> inquiries = medicationInquiryService.getPendingInquiries();
+        List<MedicationInquiry> inquiries = medicationInquiryService.getPharmacistInquiries();
         return ResponseEntity.ok(inquiries);
     }
 
@@ -77,5 +77,19 @@ public class MedicationInquiryController {
     public ResponseEntity<Void> closeInquiry(@PathVariable Long inquiryId) {
         medicationInquiryService.closeInquiry(inquiryId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/medication-inquiries/{inquiryId}/respond")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<MedicationInquiry> respondToInquiry(@PathVariable Long inquiryId) {
+        MedicationInquiry inquiry = medicationInquiryService.addRespondingPharmacy(inquiryId);
+        return ResponseEntity.ok(inquiry);
+    }
+
+    @PostMapping("/medication-inquiries/{inquiryId}/withdraw")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<MedicationInquiry> withdrawFromInquiry(@PathVariable Long inquiryId) {
+        MedicationInquiry inquiry = medicationInquiryService.removeRespondingPharmacy(inquiryId);
+        return ResponseEntity.ok(inquiry);
     }
 }

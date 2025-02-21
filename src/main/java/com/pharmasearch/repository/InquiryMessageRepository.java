@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface InquiryMessageRepository extends JpaRepository<InquiryMessage, Long> {
     List<InquiryMessage> findByInquiryOrderByCreatedAtAsc(MedicationInquiry inquiry);
+    long countByInquiry(MedicationInquiry inquiry);
 }
