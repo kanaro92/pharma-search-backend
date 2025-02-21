@@ -16,24 +16,26 @@ public interface MedicationInquiryRepository extends JpaRepository<MedicationInq
     List<MedicationInquiry> findByUserOrderByCreatedAtDesc(User user);
     List<MedicationInquiry> findByUserIdOrderByCreatedAtDesc(Long userId);
     List<MedicationInquiry> findByUserAndStatusNotOrderByCreatedAtDesc(User user, String status);
-    List<MedicationInquiry> findByRespondingPharmacyOrderByCreatedAtDesc(User pharmacy);
+    
+    @Query("SELECT DISTINCT i FROM MedicationInquiry i JOIN i.respondingPharmacies p WHERE p = :pharmacy ORDER BY i.createdAt DESC")
+    List<MedicationInquiry> findByRespondingPharmaciesContainingOrderByCreatedAtDesc(User pharmacy);
     
     @Query("SELECT i FROM MedicationInquiry i WHERE i.status = :status AND " +
-           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy) " +
+           "(:pharmacy MEMBER OF i.respondingPharmacies OR SIZE(i.respondingPharmacies) = 0) " +
            "ORDER BY i.createdAt DESC")
-    List<MedicationInquiry> findByStatusAndRespondingPharmacyIsNullOrRespondingPharmacy(
+    List<MedicationInquiry> findByStatusAndRespondingPharmaciesEmptyOrContaining(
         @Param("status") String status, @Param("pharmacy") User pharmacy);
 
     @Query("SELECT i FROM MedicationInquiry i WHERE i.status <> :status AND " +
-           "(i.respondingPharmacy IS NULL OR i.respondingPharmacy = :pharmacy) " +
+           "(:pharmacy MEMBER OF i.respondingPharmacies OR SIZE(i.respondingPharmacies) = 0) " +
            "ORDER BY i.createdAt DESC")
-    List<MedicationInquiry> findByStatusNotAndRespondingPharmacyIsNullOrRespondingPharmacy(
+    List<MedicationInquiry> findByStatusNotAndRespondingPharmaciesEmptyOrContaining(
         @Param("status") String status, @Param("pharmacy") User pharmacy);
 
-    // New methods for pharmacy statistics
-    @Query("SELECT COUNT(i) FROM MedicationInquiry i WHERE i.respondingPharmacy = :pharmacy")
+    // Methods for pharmacy statistics
+    @Query("SELECT COUNT(DISTINCT i) FROM MedicationInquiry i JOIN i.respondingPharmacies p WHERE p = :pharmacy")
     Long countByPharmacy(@Param("pharmacy") Pharmacy pharmacy);
 
-    @Query("SELECT COUNT(i) FROM MedicationInquiry i WHERE i.respondingPharmacy = :pharmacy AND i.status = :status")
+    @Query("SELECT COUNT(DISTINCT i) FROM MedicationInquiry i JOIN i.respondingPharmacies p WHERE p = :pharmacy AND i.status = :status")
     Long countByPharmacyAndStatus(@Param("pharmacy") Pharmacy pharmacy, @Param("status") String status);
 }

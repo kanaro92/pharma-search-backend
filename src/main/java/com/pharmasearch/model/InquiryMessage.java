@@ -29,12 +29,25 @@ public class InquiryMessage {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "inquiry_id", nullable = false)
-    @JsonIgnoreProperties({"messages", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({
+        "messages", "hibernateLazyInitializer", "handler",
+        "user.authorities", "user.accountNonLocked", "user.accountNonExpired", 
+        "user.credentialsNonExpired", "user.enabled", "user.username",
+        "respondingPharmacies.authorities", "respondingPharmacies.accountNonLocked",
+        "respondingPharmacies.accountNonExpired", "respondingPharmacies.credentialsNonExpired",
+        "respondingPharmacies.enabled", "respondingPharmacies.username",
+        "respondingPharmacies.medicationRequests", "respondingPharmacies.medicationStocks"
+    })
     private MedicationInquiry inquiry;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sender_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password"})
+    @JsonIgnoreProperties({
+        "hibernateLazyInitializer", "handler", "password",
+        "authorities", "accountNonLocked", "accountNonExpired",
+        "credentialsNonExpired", "enabled", "username",
+        "medicationRequests", "medicationStocks"
+    })
     private User sender;
 
     @PrePersist

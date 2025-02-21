@@ -47,9 +47,14 @@ public class MedicationInquiry {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password"})
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "responding_pharmacy_id")
-    private User respondingPharmacy;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "inquiry_responding_pharmacies",
+        joinColumns = @JoinColumn(name = "inquiry_id"),
+        inverseJoinColumns = @JoinColumn(name = "pharmacy_id")
+    )
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password"})
+    private List<User> respondingPharmacies = new ArrayList<>();
 
     @OneToMany(mappedBy = "inquiry", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"inquiry"})
